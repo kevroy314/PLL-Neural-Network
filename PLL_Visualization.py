@@ -20,14 +20,26 @@ curves.append(plotArea.plot(pen=(0,255,0)))
 curves.append(plotArea.plot(pen=(0,0,255)))
 curves.append(plotArea.plot(pen=(255,255,255)))
 
+legend = pg.LegendItem(offset=(0,1))
+legend.addItem(curves[0], "Phase Detected, Lowpass Filtered")
+legend.addItem(curves[1], "PLL Lock")
+legend.addItem(curves[2], "Logical Lock")
+legend.addItem(curves[3], "Test Signal")
+legend.setParentItem(plotArea)
+
 # Class representing the functioning of a PLL
+# Sample Rate is in Hz
+# Carrier Frequency is in Hz
+# Deviation is in Hz
+# Loop Gain is a proportion (usually 0<x<1)
+# Phase Shift is a proportion (usually 0<=x<1)
 class PLL:
-    def __init__(self, sample_rate, carrier_frequency, deviation, loop_gain):
+    def __init__(self, sample_rate, carrier_frequency, loop_gain, phase_shift):
         self.invsqr2 = 1.0 / sqrt(2.0)
 
         self.sample_rate = sample_rate
-        self.start_f = carrier_frequency - deviation
-        self.end_f = carrier_frequency + deviation
+
+        self.phase_shift = phase_shift
 
         self.pll_integral = 0
         self.old_ref = 0
@@ -54,18 +66,18 @@ class PLL:
         self.pll_loop_control = self.loop_lowpass(self.pll_loop_control) # loop low-pass filter
         self.output = self.output_lowpass(self.pll_loop_control) # output low-pass filter
         self.pll_integral += self.pll_loop_control / self.sample_rate # FM integral
-        self.ref_sig = cos(2 * pi * self.pll_cf * (t + self.pll_integral)) # reference signal
+        self.ref_sig = cos(2 * pi * self.pll_cf * (t + self.pll_integral) + (self.phase_shift * 2 * pi)) # reference signal
         self.quad_ref = (self.ref_sig - self.old_ref) * self.sample_rate / (2 * pi * self.pll_cf) # quadrature reference
         self.old_ref = self.ref_sig
         self.pll_lock = self.lock_lowpass(-self.quad_ref * y) # lock sensor
         self.logic_lock = (0,1)[self.pll_lock > 0.1] # logical lock
         # END PLL block
-        self.da.append(self.output * 32)
-        self.db.append(self.pll_lock * 2)
+        self.da.append(self.output)
+        self.db.append(self.pll_lock)
         self.dc.append(self.logic_lock)
 
 # Class representing a test signal to be fed to the PLL
-class TestSignal:
+class SweepSignal:
     def __init__(self, sample_rate, carrier_frequency, deviation, noise_level, duration):
         self.fa = []
         self.modi = 0
@@ -87,50 +99,73 @@ class TestSignal:
         test_sig += noise * self.noise_level 
         return test_sig
 
+class SineSignal:
+    def __init__(self, amplitude, frequency, phase, noise_level):
+        self.frequency = frequency
+        self.two_pi_frequency = 2 * pi * frequency
+        self.amplitude = amplitude
+        self.phase = phase * 2 * pi
+        self.noise_level = noise_level
+        self.fa = []
+
+    def update(self, t):
+        test_sig = self.amplitude * sin(t * self.two_pi_frequency + self.phase) + ((random.random() * 2 - 1) * self.noise_level)
+        self.fa.append(test_sig)
+        return test_sig
+
 # Simulation Properties
 sample_rate = 40000.0
 carrier_frequency = 2000
-deviation = 140
 
 # PLL Properties
-loop_gain = 0.05
+loop_gain = 1
+phase_shift = 0.5
+number_of_PLLs = 1
+PLLs = []
 
 # Create PLL
-pll = PLL(sample_rate, carrier_frequency, deviation, loop_gain)
+for i in range(0, number_of_PLLs):
+    PLLs.append(PLL(sample_rate, carrier_frequency, loop_gain, phase_shift))
 
 # Test Signal Properties
-noise_level = 1
+noise_level = 0.01
 duration = 1
+test_signals = []
 
 # Test input signal variables
-test_signal = TestSignal(sample_rate, carrier_frequency, deviation, noise_level, duration)
+# test_signal = SweepSignal(sample_rate, carrier_frequency, deviation, noise_level, duration)
+for i in range(0, number_of_PLLs):
+    test_signals.append(SineSignal(1, 10, 0, noise_level))
 
 # Time counter
 t = 0
 tick = 1/sample_rate
 
 # Decimation for the display to speed up computation
-display_decimation = 1000
+display_decimation = 50
 frame_counter = 0
+display_pll_num = 0
 
 # Create loop timer
 timer = QtCore.QTimer()
 
 def update():
-    global timer, curves, plotArea, t, tick, frame_counter, duration, pll, test_signal
+    global timer, curves, plotArea, t, tick, frame_counter, duration, PLLs, test_signals
 
 	# Stop the simulation when the duration has completed
     if t >= duration:
         timer.stop()
 
     # Update the test signal and the ppl (iterate simulation)
-    pll.update(t, test_signal.update(t))
+    for i in range(0,number_of_PLLs):
+        PLLs[i].update(t, test_signals[i].update(t))
 
     # Graph the PLL states according to the display decimation
     if frame_counter%display_decimation == 0:
-        curves[0].setData(pll.da)
-        curves[1].setData(pll.db)
-        curves[2].setData(pll.dc)
+        curves[0].setData(PLLs[display_pll_num].da)
+        curves[1].setData(PLLs[display_pll_num].db)
+        curves[2].setData(PLLs[display_pll_num].dc)
+        #curves[3].setData(test_signals[display_pll_num].fa)
 
     # Iterate the time counter according to the sample rate
     t += tick
