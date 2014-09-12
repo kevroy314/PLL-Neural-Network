@@ -107,19 +107,21 @@ class SineSignal:
         self.phase = phase * 2 * pi
         self.noise_level = noise_level
         self.fa = []
+        self.fa_scaling = 0.001
 
     def update(self, t):
         test_sig = self.amplitude * sin(t * self.two_pi_frequency + self.phase) + ((random.random() * 2 - 1) * self.noise_level)
-        self.fa.append(test_sig)
+        self.fa.append(test_sig * self.fa_scaling)
         return test_sig
 
 # Simulation Properties
 sample_rate = 40000.0
 carrier_frequency = 2000
+deviation = 140
 
 # PLL Properties
-loop_gain = 1
-phase_shift = 0.5
+loop_gain = 0.05
+phase_shift = 0.0
 number_of_PLLs = 1
 PLLs = []
 
@@ -128,21 +130,21 @@ for i in range(0, number_of_PLLs):
     PLLs.append(PLL(sample_rate, carrier_frequency, loop_gain, phase_shift))
 
 # Test Signal Properties
-noise_level = 0.01
-duration = 1
+noise_level = 1
+duration = 4
 test_signals = []
 
 # Test input signal variables
-# test_signal = SweepSignal(sample_rate, carrier_frequency, deviation, noise_level, duration)
 for i in range(0, number_of_PLLs):
-    test_signals.append(SineSignal(1, 10, 0, noise_level))
+    # test_signals.append(SineSignal(1, 10, 0, noise_level))
+    test_signals.append(SweepSignal(sample_rate, carrier_frequency, deviation, noise_level, duration))
 
 # Time counter
 t = 0
 tick = 1/sample_rate
 
 # Decimation for the display to speed up computation
-display_decimation = 50
+display_decimation = 5000
 frame_counter = 0
 display_pll_num = 0
 
