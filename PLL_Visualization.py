@@ -4,6 +4,8 @@ import pyqtgraph as pg # for GUI
 from biquad_module import Biquad # For filters
 from pylab import * # For PLL
 import random, re # For noise
+from scipy import signal
+from collections import deque
 
 # Set up application window
 app = QtGui.QApplication([])
@@ -14,6 +16,7 @@ pg.setConfigOptions(antialias=True)
 
 # Set up plot environment
 plotArea = win.addPlot()
+plotArea.enableAutoRange('xy',True)
 curves = []
 curves.append(plotArea.plot(pen=(255,0,0)))
 curves.append(plotArea.plot(pen=(0,255,0)))
@@ -52,24 +55,53 @@ class PLL:
         self.pll_lock = 0
         self.logic_lock = 0
 
-        self.loop_lowpass = Biquad(Biquad.LOWPASS,100,self.sample_rate,self.invsqr2)
-        self.output_lowpass = Biquad(Biquad.LOWPASS,10,self.sample_rate,self.invsqr2)
-        self.lock_lowpass = Biquad(Biquad.LOWPASS,10,self.sample_rate,self.invsqr2)
+        #self.loop_lowpass = Biquad(Biquad.LOWPASS,100,self.sample_rate,self.invsqr2)
+        #self.output_lowpass = Biquad(Biquad.LOWPASS,10,self.sample_rate,self.invsqr2)
+        #self.lock_lowpass = Biquad(Biquad.LOWPASS,10,self.sample_rate,self.invsqr2)
+
+        self.loop_lowpass_data = deque()
+        self.output_lowpass_data = deque()
+        self.lock_lowpass_data = deque()
+        self.window_size = 1000
+        self.filter_order = 2
 
         self.da = []
         self.db = []
         self.dc = []
 
+    def butter_lowpass(self, lowcut, fs, order=5):
+        nyq = 0.5 * fs
+        low = lowcut / nyq
+        b, a = signal.butter(order, low, btype='low')
+        return b, a
+
+    def butter_lowpass_filter(self, data, lowcut, fs, order=5):
+        b, a = self.butter_lowpass(lowcut, fs, order=order)
+        y = signal.lfilter(b, a, data)
+        return y
+
     def update(self, t, y):
         # BEGIN PLL block
         self.pll_loop_control = y * self.ref_sig * self.pll_loop_gain # phase detector
-        self.pll_loop_control = self.loop_lowpass(self.pll_loop_control) # loop low-pass filter
-        self.output = self.output_lowpass(self.pll_loop_control) # output low-pass filter
+
+        self.loop_lowpass_data.append(self.pll_loop_control)
+        if(len(self.loop_lowpass_data) > self.window_size):
+            self.loop_lowpass_data.popleft()
+        self.pll_loop_control = self.butter_lowpass_filter(self.loop_lowpass_data, 100, self.sample_rate, order=self.filter_order)[-1] # loop low-pass filter
+        self.output_lowpass_data.append(self.pll_loop_control)
+        if(len(self.output_lowpass_data) > self.window_size):
+            self.output_lowpass_data.popleft()
+        self.output = self.butter_lowpass_filter(self.output_lowpass_data, 10, self.sample_rate, order=self.filter_order)[-1] # output low-pass filter
+
         self.pll_integral += self.pll_loop_control / self.sample_rate # FM integral
         self.ref_sig = cos(2 * pi * self.pll_cf * (t + self.pll_integral) + (self.phase_shift * 2 * pi)) # reference signal
         self.quad_ref = (self.ref_sig - self.old_ref) * self.sample_rate / (2 * pi * self.pll_cf) # quadrature reference
         self.old_ref = self.ref_sig
-        self.pll_lock = self.lock_lowpass(-self.quad_ref * y) # lock sensor
+
+        self.lock_lowpass_data.append(-self.quad_ref * y)
+        if(len(self.lock_lowpass_data) > self.window_size):
+            self.lock_lowpass_data.popleft()
+        self.pll_lock = self.butter_lowpass_filter(self.lock_lowpass_data, 10, self.sample_rate, order=self.filter_order)[-1] # lock sensor
         self.logic_lock = (0,1)[self.pll_lock > 0.1] # logical lock
         # END PLL block
         self.da.append(self.output)
@@ -115,7 +147,7 @@ class SineSignal:
         return test_sig
 
 # Simulation Properties
-sample_rate = 40000.0
+sample_rate = 1000.0
 carrier_frequency = 2000
 deviation = 140
 
@@ -136,15 +168,15 @@ test_signals = []
 
 # Test input signal variables
 for i in range(0, number_of_PLLs):
-    # test_signals.append(SineSignal(1, 10, 0, noise_level))
-    test_signals.append(SweepSignal(sample_rate, carrier_frequency, deviation, noise_level, duration))
+    test_signals.append(SineSignal(1, 10, 0, noise_level))
+    #test_signals.append(SweepSignal(sample_rate, carrier_frequency, deviation, noise_level, duration))
 
 # Time counter
 t = 0
 tick = 1/sample_rate
 
 # Decimation for the display to speed up computation
-display_decimation = 5000
+display_decimation = 100
 frame_counter = 0
 display_pll_num = 0
 
@@ -167,7 +199,7 @@ def update():
         curves[0].setData(PLLs[display_pll_num].da)
         curves[1].setData(PLLs[display_pll_num].db)
         curves[2].setData(PLLs[display_pll_num].dc)
-        #curves[3].setData(test_signals[display_pll_num].fa)
+        curves[3].setData(test_signals[display_pll_num].fa)
 
     # Iterate the time counter according to the sample rate
     t += tick
