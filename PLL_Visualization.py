@@ -14,19 +14,6 @@ win.resize(1000, 600)
 win.setWindowTitle('PLL Example Animated')
 pg.setConfigOptions(antialias=True)
 
-# Set up plot environment
-plotArea = win.addPlot()
-plotArea.enableAutoRange('xy', True)
-curves = [plotArea.plot(pen=(255, 0, 0)), plotArea.plot(pen=(0, 255, 0)), plotArea.plot(pen=(0, 0, 255)),
-          plotArea.plot(pen=(255, 255, 255))]
-
-legend = pg.LegendItem(offset=(0, 1))
-legend.addItem(curves[0], "Output")
-legend.addItem(curves[1], "Current Phase Shift")
-legend.addItem(curves[2], "Phase Control")
-legend.addItem(curves[3], "Test Signal")
-legend.setParentItem(plotArea)
-
 
 # Class representing the functioning of a PLL
 # Sample Rate is in Hz
@@ -57,15 +44,15 @@ class PLL:
         self.control_log = []
 
     @staticmethod
-    def butter_lowpass(frequency_cutoff, fs, order=5):
-        nyq = 0.5 * fs
-        low = frequency_cutoff / nyq
+    def butter_lowpass(_frequency_cutoff, _fs, order=5):
+        nyq = 0.5 * _fs
+        low = _frequency_cutoff / nyq
         b, a = signal.butter(order, low, btype='low')
         return b, a
 
-    def butter_lowpass_filter(self, data, frequency_cutoff, fs, order=5):
-        b, a = self.butter_lowpass(frequency_cutoff, fs, order=order)
-        return signal.lfilter(b, a, data)
+    def butter_lowpass_filter(self, _data, _frequency_cutoff, _fs, order=5):
+        b, a = self.butter_lowpass(_frequency_cutoff, _fs, order=order)
+        return signal.lfilter(b, a, _data)
 
     @staticmethod
     def v(theta):
@@ -81,8 +68,8 @@ class PLL:
         self.control_log.append(control)
 
         # Lowpass Filter
-        #integral = self.butter_lowpass_filter(self.control_log, self.lowpass_cutoff_frequency,
-        #                                      self.carrier_frequency, order=self.filter_order)
+        integral = self.butter_lowpass_filter(self.control_log, self.lowpass_cutoff_frequency,
+                                              self.carrier_frequency, order=self.filter_order)[-1]
 
         # Determine Weighted Phase Adjustment
         phase_aggregator = 0
@@ -93,14 +80,14 @@ class PLL:
             phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
                                 w_ij * self.v(_PLLs[_j].current_phase_shift)
 
-        self.next_phase_shift = self.persistent_phase_shift + self.v(control) * phase_aggregator
+        self.next_phase_shift = self.persistent_phase_shift + self.v(integral) * phase_aggregator
 
         # Voltage Controlled Oscillator
         output = self.v(self.carrier_frequency * _t + self.next_phase_shift)
 
         # END PLL block
         self.output_log.append(output)
-        self.current_phase_shift_log.append(self.next_phase_shift)
+        self.current_phase_shift_log.append(self.current_phase_shift)
 
         return output
 
@@ -160,12 +147,12 @@ deviation = 140
 
 # PLL Properties
 loop_gain = 0.05
-number_of_PLLs = 1
+number_of_PLLs = 3
 
 phase_weight_matrix = [
-    [1, 0, 0.4],
-    [0, 1, 0.2],
-    [0.4, 0.2, 1]
+    [1, 0.2, 0],
+    [0.2, 1, 0.4],
+    [0, 0.4, 1]
 ]
 
 connectivity_matrix = [
@@ -185,7 +172,7 @@ for i in range(0, number_of_PLLs):
     PLLs.append(PLL(sample_rate, carrier_frequency, loop_gain, -pi / 2))
 
 # Test Signal Properties
-noise_level = 0.01
+noise_level = 0.1
 duration = 4
 test_signals = []
 
@@ -194,21 +181,38 @@ for i in range(0, number_of_PLLs):
     test_signals.append(SineSignal(1, 1.2, 0, noise_level))
     # test_signals.append(SweepSignal(sample_rate, carrier_frequency, deviation, noise_level, duration))
 
+# Set up plot environment
+plotAreas = []
+curves = []
+for i in range(0, number_of_PLLs):
+    plotAreas.append(win.addPlot())
+    win.nextRow()
+    plotAreas[i].enableAutoRange('xy', True)
+    curves.append(
+        [plotAreas[i].plot(pen=(255, 0, 0)), plotAreas[i].plot(pen=(0, 255, 0)), plotAreas[i].plot(pen=(0, 0, 255)),
+         plotAreas[i].plot(pen=(255, 255, 255))])
+
+    legend = pg.LegendItem(offset=(0, 1))
+    legend.addItem(curves[i][0], "Output")
+    legend.addItem(curves[i][1], "Current Phase Shift")
+    legend.addItem(curves[i][2], "Phase Control")
+    legend.addItem(curves[i][3], "Test Signal")
+    legend.setParentItem(plotAreas[i])
+
 # Time counter
 t = 0
 tick = 1 / sample_rate
 
 # Decimation for the display to speed up computation
-display_decimation = 100
+display_decimation = 1
 frame_counter = 0
-display_pll_num = 0
 
 # Create loop timer
 timer = QtCore.QTimer()
 
 
 def update():
-    global timer, curves, plotArea, t, tick, frame_counter, duration, \
+    global timer, curves, plotAreas, t, tick, frame_counter, duration, \
         PLLs, test_signals, phase_weight_matrix, connectivity_matrix
 
     # Stop the simulation when the duration has completed
@@ -225,10 +229,11 @@ def update():
 
     # Graph the PLL states according to the display decimation
     if frame_counter % display_decimation == 0:
-        curves[0].setData(PLLs[display_pll_num].output_log)
-        curves[1].setData(PLLs[display_pll_num].current_phase_shift_log)
-        curves[2].setData(PLLs[display_pll_num].control_log)
-        curves[3].setData(test_signals[display_pll_num].signal_log)
+        for _i in range(0, number_of_PLLs):
+            curves[_i][0].setData(PLLs[_i].output_log)
+            curves[_i][1].setData(PLLs[_i].current_phase_shift_log)
+            curves[_i][2].setData(PLLs[_i].control_log)
+            curves[_i][3].setData(test_signals[_i].signal_log)
 
     # Iterate the time counter according to the sample rate
     t += tick
