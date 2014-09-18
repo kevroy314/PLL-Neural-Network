@@ -1,5 +1,5 @@
 from collections import deque
-
+from decimal import *
 from pyqtgraph.Qt import QtGui, QtCore  # For GUI
 import pyqtgraph as pg  # For GUI
 from pylab import *  # For PLL
@@ -80,11 +80,10 @@ class PLL:
             phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
                                 w_ij * self.v(_PLLs[_j].current_phase_shift)
 
-        print self.persistent_phase_shift
         self.next_phase_shift = (self.v(integral) * phase_aggregator)
 
         # Voltage Controlled Oscillator
-        output = self.v(self.carrier_frequency * _t + self.next_phase_shift)
+        output = self.v(self.carrier_frequency * _t + (self.next_phase_shift + self.persistent_phase_shift))
 
         # END PLL block
         self.output_log.append(output)
@@ -147,7 +146,6 @@ carrier_frequency = 2000
 deviation = 140
 
 # PLL Properties
-loop_gain = 0.05
 number_of_PLLs = 3
 
 phase_weight_matrix = [
@@ -170,10 +168,10 @@ PLLs = []
 
 # Create PLL
 for i in range(0, number_of_PLLs):
-    PLLs.append(PLL(sample_rate, carrier_frequency, loop_gain, -pi / 2))
+    PLLs.append(PLL(sample_rate, carrier_frequency, 1, -1.57079))
 
 # Test Signal Properties
-noise_level = 0.1
+noise_level = 0.01
 duration = 4
 test_signals = []
 
@@ -205,7 +203,7 @@ t = 0
 tick = 1 / sample_rate
 
 # Decimation for the display to speed up computation
-display_decimation = 1
+display_decimation = 10
 frame_counter = 0
 
 # Create loop timer
@@ -231,10 +229,10 @@ def update():
     # Graph the PLL states according to the display decimation
     if frame_counter % display_decimation == 0:
         for _i in range(0, number_of_PLLs):
-            #curves[_i][0].setData(PLLs[_i].output_log)
-            curves[_i][1].setData(PLLs[_i].current_phase_shift_log)
-            #curves[_i][2].setData(PLLs[_i].control_log)
-            #curves[_i][3].setData(test_signals[_i].signal_log)
+            curves[_i][0].setData(PLLs[_i].output_log)
+            curves[_i][2].setData(PLLs[_i].control_log)
+            curves[_i][3].setData(test_signals[_i].signal_log)
+            curves[_i][1].setData([x*100 for x in PLLs[_i].current_phase_shift_log])
 
     # Iterate the time counter according to the sample rate
     t += tick
