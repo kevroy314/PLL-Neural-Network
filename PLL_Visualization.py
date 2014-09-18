@@ -80,14 +80,15 @@ class PLL:
             phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
                                 w_ij * self.v(_PLLs[_j].current_phase_shift)
 
-        self.next_phase_shift = self.persistent_phase_shift + self.v(integral) * phase_aggregator
+        print self.persistent_phase_shift
+        self.next_phase_shift = (self.v(integral) * phase_aggregator)
 
         # Voltage Controlled Oscillator
         output = self.v(self.carrier_frequency * _t + self.next_phase_shift)
 
         # END PLL block
         self.output_log.append(output)
-        self.current_phase_shift_log.append(self.current_phase_shift)
+        self.current_phase_shift_log.append(self.next_phase_shift)
 
         return output
 
@@ -178,7 +179,7 @@ test_signals = []
 
 # Test input signal variables
 for i in range(0, number_of_PLLs):
-    test_signals.append(SineSignal(1, 1.2, 0, noise_level))
+    test_signals.append(SineSignal(1, 1.2 * (i + 1), 0, noise_level))
     # test_signals.append(SweepSignal(sample_rate, carrier_frequency, deviation, noise_level, duration))
 
 # Set up plot environment
@@ -230,10 +231,10 @@ def update():
     # Graph the PLL states according to the display decimation
     if frame_counter % display_decimation == 0:
         for _i in range(0, number_of_PLLs):
-            curves[_i][0].setData(PLLs[_i].output_log)
+            #curves[_i][0].setData(PLLs[_i].output_log)
             curves[_i][1].setData(PLLs[_i].current_phase_shift_log)
-            curves[_i][2].setData(PLLs[_i].control_log)
-            curves[_i][3].setData(test_signals[_i].signal_log)
+            #curves[_i][2].setData(PLLs[_i].control_log)
+            #curves[_i][3].setData(test_signals[_i].signal_log)
 
     # Iterate the time counter according to the sample rate
     t += tick
