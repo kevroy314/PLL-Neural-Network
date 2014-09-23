@@ -14,12 +14,12 @@ Initialize the Simulation
 
 # Simulation Properties
 sample_rate = 40000.0
-carrier_frequency = 200
-lowpass_cutoff_frequency = 5
+carrier_frequency = 100
+lowpass_cutoff_frequency = 10
 t = 0
 tick = 1 / sample_rate
 
-number_of_PLLs = 10
+number_of_PLLs = 1
 PLLs = []
 
 phase_weight_matrix = [
@@ -44,18 +44,18 @@ else:
     print "Array Symmetry Validated."
 
 # Test Signal Properties
-noise_level = 0
+noise_level = 0.0
 duration = 4
 test_signals = []
 
 
 # Create PLL
 for i in range(0, number_of_PLLs):
-    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1, -1.57079))
+    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1, 0))#-1.57079))
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
-    test_signals.append(SineSignal(1, carrier_frequency, i, noise_level))
+    test_signals.append(SineSignal(1, carrier_frequency, 0, noise_level))
 
 
 """
@@ -111,6 +111,12 @@ frame_counter = 0
 # Create loop timer
 timer = QtCore.QTimer()
 
+"""
+Test
+"""
+
+#for i in range(0,number_of_PLLs):
+    #PLLs[i].set_feedback_signal_lock(True, i+1)
 
 """
 Define Simulation Loop

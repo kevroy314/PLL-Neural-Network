@@ -29,11 +29,14 @@ class PLL:
 
         self.voltage_output_lowpass_data = deque()
         self.lowpass_cutoff_frequency = _lowpass_cutoff_frequency
-        self.filter_order = 2
+        self.filter_order = 6
 
         self.output_log = []
         self.current_phase_shift_log = []
         self.control_log = []
+
+        self.lock_feedback_signal = False
+        self.lock_feedback_signal_value = 0
 
     @staticmethod
     def butter_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, order=5):
@@ -77,13 +80,16 @@ class PLL:
 
         # Phase Detector
         control = 0
-        if len(self.output_log) != 0:
+        if self.lock_feedback_signal:
+            # Override the existing feedback signal with the locked value
+            control = (_y * self.lock_feedback_signal_value * self.voltage_gain)
+        elif len(self.output_log) != 0:
             control = (_y * self.output_log[-1] * self.voltage_gain)
         self.control_log.append(control)
 
         # Lowpass Filter
-        integral = self.butter_lowpass_filter(self.control_log, self.lowpass_cutoff_frequency,
-                                              self.carrier_frequency, order=self.filter_order)[-1]
+        integral = control#self.butter_lowpass_filter(self.control_log, self.lowpass_cutoff_frequency,
+                   #                           self.carrier_frequency, order=self.filter_order)[-1]
 
         # Determine Weighted Phase Adjustment
         phase_aggregator = 0
@@ -112,3 +118,10 @@ class PLL:
 
         """
         self.current_phase_shift = self.next_phase_shift
+
+    def set_feedback_signal_lock(self, locked, lock_value=0):
+        self.lock_feedback_signal = locked
+        if locked:
+            self.lock_feedback_signal_value = lock_value
+        else:
+            self.lock_feedback_signal_value = 0
