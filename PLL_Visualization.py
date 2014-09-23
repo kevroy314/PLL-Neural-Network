@@ -23,16 +23,16 @@ number_of_PLLs = 10
 PLLs = []
 
 phase_weight_matrix = [
-    [1, 0, 0, 0, 0, 0, 0, 1, 1, 1],
-    [0, 1, 0, 0, 0, 0, 0, 1, 1, 1],
-    [0, 0, 1, 0, 0, 0, 0, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [1, 1, 1, 0, 0, 0, 0, 1, 0, 0],
-    [1, 1, 1, 0, 0, 0, 0, 0, 1, 0],
-    [1, 1, 1, 0, 0, 0, 0, 0, 0, 1]
+    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
 ]
 
 connectivity_matrix = np.ones([number_of_PLLs, number_of_PLLs])
@@ -68,6 +68,11 @@ app = QtGui.QApplication([])
 win = pg.GraphicsWindow(title="PLL Example Animated")
 win.resize(1000, 600)
 win.setWindowTitle('PLL Example Animated')
+
+img_win = pg.GraphicsWindow(title="PLL Example Animated")
+img_win.resize(300, 300)
+img_win.setWindowTitle('PLL Example Phase Image')
+
 pg.setConfigOptions(antialias=True)
 
 # Set up plot environment
@@ -88,6 +93,17 @@ for i in range(0, number_of_PLLs):
     legend.addItem(curves[i][3], "Test Signal")
     legend.setParentItem(plotAreas[i])
 
+img = pg.ImageItem()
+w = pg.GradientWidget()
+w.setTickColor(0, QtGui.QColor(255, 69, 00))
+w.setTickColor(1, QtGui.QColor(0, 0, 128))
+lut = w.getLookupTable(65536)
+img.setLookupTable(lut, update=True)
+data = np.random.randn(number_of_PLLs, number_of_PLLs)
+img.setImage(data)
+img_view = img_win.addViewBox()
+img_view.addItem(img)
+
 # Decimation for the display to speed up computation
 display_decimation = 10
 frame_counter = 0
@@ -102,7 +118,7 @@ Define Simulation Loop
 
 
 def update():
-    global timer, curves, plotAreas, t, tick, frame_counter, duration, \
+    global timer, curves, plotAreas, img, t, tick, frame_counter, duration, \
         PLLs, test_signals, phase_weight_matrix, connectivity_matrix
 
     # Stop the simulation when the duration has completed
@@ -124,7 +140,11 @@ def update():
             curves[_i][1].setData([x*1 for x in PLLs[_i].current_phase_shift_log])
             curves[_i][2].setData([x*1 for x in PLLs[_i].control_log])
             curves[_i][3].setData([x*1 for x in test_signals[_i].signal_log])
-
+        image_data = np.zeros((number_of_PLLs, number_of_PLLs))
+        for _i in range(0, number_of_PLLs):
+            for _j in range(0, number_of_PLLs):
+                image_data[_i][_j] = PLLs[_i].current_phase_shift - PLLs[_j].current_phase_shift
+        img.setImage(image_data)
     # Iterate the time counter according to the sample rate
     t += tick
     # Iterate the display frame counter
