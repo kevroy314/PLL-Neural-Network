@@ -15,24 +15,19 @@ Initialize the Simulation
 # Simulation Properties
 sample_rate = 40000.0
 carrier_frequency = 200
-lowpass_cutoff_frequency = 1
+lowpass_cutoff_frequency = 2
 t = 0
 tick = 1 / sample_rate
 
-number_of_PLLs = 10
+number_of_PLLs = 5
 PLLs = []
 
 phase_weight_matrix = [
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+    [1, 0, 0, 0, 1],
+    [0, 1, 0, 1, 0],
+    [0, 0, 1, 0, 0],
+    [0, 1, 0, 1, 0],
+    [1, 0, 0, 0, 1]
 ]
 
 connectivity_matrix = np.ones([number_of_PLLs, number_of_PLLs])
@@ -51,14 +46,14 @@ test_signals = []
 
 # Create PLL
 for i in range(0, number_of_PLLs):
-    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1, 1.57079))
+    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1, 0))#1.57079))
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
     test_signals.append(SineSignal(1, carrier_frequency, i+1, noise_level))
 
-for i in range(0, number_of_PLLs):
-    PLLs[i].set_feedback_signal_lock(True, 2)
+#for i in range(0, number_of_PLLs):
+    #PLLs[i].set_feedback_signal_lock(True, 2)
 
 """
 Initialize the GUI
@@ -143,8 +138,8 @@ def update():
             curves[_i][3].setData([x*1 for x in PLLs[_i].output_voltage_log])
         image_data = np.zeros((number_of_PLLs, number_of_PLLs))
         for _i in range(0, number_of_PLLs):
-            for _j in range(_i, number_of_PLLs):
-                image_data[_i][_j] = PLLs[_i].current_phase_shift_log[-1] - PLLs[_j].current_phase_shift_log[-1]
+            for _j in range(0, _i):
+                image_data[_j][_i] = PLLs[_i].current_phase_shift_log[-1] - PLLs[_j].current_phase_shift_log[-1]
         img.setImage(image_data, autoLevels=False)
     # Iterate the time counter according to the sample rate
     t += tick
