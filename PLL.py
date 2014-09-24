@@ -3,7 +3,7 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 from scipy import signal
 from collections import deque
 from pylab import *
-
+from biquad_module import Biquad  # For filters
 
 # Class representing the functioning of a Phase-Locked Loop
 class PLL:
@@ -25,15 +25,14 @@ class PLL:
         self.carrier_frequency = _carrier_frequency
         self.voltage_gain = _voltage_gain
 
-        self.voltage_output = 0
-
         self.voltage_output_lowpass_data = deque()
         self.lowpass_cutoff_frequency = _lowpass_cutoff_frequency
-        self.filter_order = 6
-
-        self.output_log = []
+        self.filter_order = 2
+        self.filter_window_size = 10
+        self.bi_quad_lowpass = Biquad(Biquad.LOWPASS, _lowpass_cutoff_frequency, self.sample_rate, 1 / sqrt(2))
+        self.output_voltage_log = []
         self.current_phase_shift_log = []
-        self.control_log = []
+        self.detected_phase_log = []
 
         self.lock_feedback_signal = False
         self.lock_feedback_signal_value = 0
@@ -53,6 +52,16 @@ class PLL:
         low = _frequency_cutoff / nyq
         b, a = signal.butter(order, low, btype='low')
         return signal.lfilter(b, a, _data)
+
+    @staticmethod
+    def cheby1_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, order):
+        nyq = 0.5 * _carrier_frequency
+        low = _frequency_cutoff / nyq
+        b, a = signal.cheby1(order, 5, low, 'low', analog=False, output='ba')
+        return signal.lfilter(b, a, _data)
+
+    def lowpass(self, _data, _frequency_cutoff, _carrier_frequency, _order):
+        return self.butter_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, _order)
 
     @staticmethod
     def v(theta):
@@ -79,17 +88,22 @@ class PLL:
         # BEGIN PLL block
 
         # Phase Detector
-        control = 0
+        detected_phase = 0
         if self.lock_feedback_signal:
             # Override the existing feedback signal with the locked value
-            control = (_y * self.lock_feedback_signal_value * self.voltage_gain)
-        elif len(self.output_log) != 0:
-            control = (_y * self.output_log[-1] * self.voltage_gain)
-        self.control_log.append(control)
-
+            detected_phase = (_y * self.lock_feedback_signal_value * self.voltage_gain)
+        elif len(self.output_voltage_log) != 0:
+            detected_phase = (_y * self.output_voltage_log[-1] * self.voltage_gain)
+        self.detected_phase_log.append(detected_phase)
         # Lowpass Filter
-        integral = control#self.butter_lowpass_filter(self.control_log, self.lowpass_cutoff_frequency,
-                   #                           self.carrier_frequency, order=self.filter_order)[-1]
+        filter_window = self.detected_phase_log[-self.filter_window_size:-1]
+        lowpass_array = self.lowpass(filter_window, self.lowpass_cutoff_frequency,
+                                     self.carrier_frequency, self.filter_order)
+
+        if len(lowpass_array) >= 1:
+            filtered_phase = lowpass_array[-1]
+        else:
+            filtered_phase = detected_phase
 
         # Determine Weighted Phase Adjustment
         phase_aggregator = 0
@@ -100,16 +114,17 @@ class PLL:
             phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
                                 w_ij * self.v(_PLLs[_j].current_phase_shift)
 
-        self.next_phase_shift = (self.v(integral) * phase_aggregator)
-
-        # Voltage Controlled Oscillator
-        output = self.v(self.carrier_frequency * _t + (self.next_phase_shift + self.persistent_phase_shift))
-
-        # END PLL block
-        self.output_log.append(output)
+        self.next_phase_shift = (self.v(filtered_phase) * phase_aggregator)
         self.current_phase_shift_log.append(self.next_phase_shift)
 
-        return output
+        # Voltage Controlled Oscillator
+        output_voltage = self.v(2 * pi * self.carrier_frequency * _t +
+                                (self.next_phase_shift + self.persistent_phase_shift))
+        self.output_voltage_log.append(output_voltage)
+
+        # END PLL block
+
+        return output_voltage
 
     def apply_next_phase_shift(self):
         """
