@@ -30,7 +30,7 @@ class SineSignal:
         """
         test_sig = \
             self.amplitude * \
-            cos(_t * self.two_pi_frequency + self.phase) + \
-            ((random.random() * 2 - 1) * self.noise_level) + 2
+            sin(_t * self.two_pi_frequency + self.phase) + \
+            ((random.random() * 2 - 1) * self.noise_level) + float(1)
         self.signal_log.append(test_sig)
         return test_sig

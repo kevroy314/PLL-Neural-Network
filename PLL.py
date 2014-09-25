@@ -28,7 +28,7 @@ class PLL:
         self.voltage_output_lowpass_data = deque()
         self.lowpass_cutoff_frequency = _lowpass_cutoff_frequency
         self.filter_order = 2
-        self.filter_window_size = 15
+        self.filter_window_size = 2
         self.bi_quad_lowpass = Biquad(Biquad.LOWPASS, _lowpass_cutoff_frequency, self.sample_rate, 1 / sqrt(2))
         self.output_voltage_log = []
         self.current_phase_shift_log = []
@@ -101,8 +101,9 @@ class PLL:
         self.detected_phase_log.append(detected_phase)
 
         # Lowpass Filter
-        filtered_phase = self.lowpass(self.detected_phase_log, self.filter_window_size, self.lowpass_cutoff_frequency,
+        filtered_phase = self.lowpass(self.detected_phase_log, self.filter_window_size, self.lowpass_cutoff_frequency * 10,
                                       self.carrier_frequency, self.filter_order)
+        #filtered_phase = self.bi_quad_lowpass(detected_phase)
 
         # Determine Weighted Phase Adjustment
         phase_aggregator = 0
@@ -113,17 +114,17 @@ class PLL:
             phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
                                 w_ij * self.v(_PLLs[_j].current_phase_shift)
 
-        self.next_phase_shift = (filtered_phase)# + phase_aggregator)
+        self.next_phase_shift = (filtered_phase) + phase_aggregator + self.persistent_phase_shift
         self.current_phase_shift_log.append(self.next_phase_shift)
 
         # Voltage Controlled Oscillator
 
-        output_voltage = float(1) * sin((2 * pi * self.carrier_frequency * _t) * detected_phase) + float(2)
+        output_voltage = float(1) * sin((2 * pi * self.carrier_frequency * _t) * detected_phase) + float(1)
 
         self.output_voltage_log.append(output_voltage)
 
         self.output_voltage_lowpass.append(self.lowpass(self.output_voltage_log, self.filter_window_size, self.lowpass_cutoff_frequency,
-                                      self.carrier_frequency, self.filter_order))
+                                            self.carrier_frequency, self.filter_order))
         self.previous_voltage = self.output_voltage_lowpass[-1]
         # END PLL block
 
