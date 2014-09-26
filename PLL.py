@@ -30,13 +30,13 @@ class PLL:
         self.filter_order = 2
         self.filter_window_size = 15
         self.bi_quad_lowpass = Biquad(Biquad.LOWPASS, _lowpass_cutoff_frequency, self.sample_rate, 1 / sqrt(2))
-        self.output_voltage_log = []
-        self.current_phase_shift_log = []
-        self.detected_phase_log = []
+        self.output_voltage_log = [0]
+        self.current_phase_shift_log = [0]
+        self.detected_phase_log = [0]
         self.lock_feedback_signal = False
         self.lock_feedback_signal_value = 0
         self.previous_voltage = 1
-        self.output_voltage_lowpass = []
+        self.output_voltage_lowpass = [0]
     @staticmethod
     def butter_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, order=5):
         """
@@ -113,17 +113,17 @@ class PLL:
             phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
                                 w_ij * self.v(_PLLs[_j].current_phase_shift)
 
-        self.next_phase_shift = (filtered_phase)# + phase_aggregator)
+        self.next_phase_shift = (filtered_phase * phase_aggregator)
         self.current_phase_shift_log.append(self.next_phase_shift)
 
         # Voltage Controlled Oscillator
 
-        output_voltage = float(1) * sin((2 * pi * self.carrier_frequency * _t) * detected_phase) + float(2)
+        output_voltage = float(1) * sin((2 * pi * self.carrier_frequency * _t) + self.next_phase_shift)
 
         self.output_voltage_log.append(output_voltage)
 
-        self.output_voltage_lowpass.append(self.lowpass(self.output_voltage_log, self.filter_window_size, self.lowpass_cutoff_frequency,
-                                      self.carrier_frequency, self.filter_order))
+        #self.output_voltage_lowpass.append(self.lowpass(self.output_voltage_log, self.filter_window_size, self.lowpass_cutoff_frequency,
+        #                              self.carrier_frequency, self.filter_order))
         self.previous_voltage = self.output_voltage_lowpass[-1]
         # END PLL block
 

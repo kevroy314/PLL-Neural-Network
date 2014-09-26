@@ -15,7 +15,7 @@ Initialize the Simulation
 # Simulation Properties
 sample_rate = 40000.0
 carrier_frequency = 200
-lowpass_cutoff_frequency = 0.5
+lowpass_cutoff_frequency = 100
 t = 0
 tick = 1 / sample_rate
 
@@ -46,7 +46,7 @@ test_signals = []
 
 # Create PLL
 for i in range(0, number_of_PLLs):
-    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 0.1, 0))#1.57079))
+    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1, 0))#1.57079))
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
@@ -133,11 +133,11 @@ def update():
     # Graph the PLL states according to the display decimation
     if frame_counter % display_decimation == 0:
         for _i in range(0, number_of_PLLs):
-            curves[_i][0].setData([x*1 for x in test_signals[_i].signal_log])
-            curves[_i][1].setData([x+2 for x in PLLs[_i].detected_phase_log])
-            curves[_i][2].setData([x+2 for x in PLLs[_i].current_phase_shift_log])
+            curves[_i][0].setData([x for x in test_signals[_i].signal_log])
+            curves[_i][1].setData([x for x in PLLs[_i].detected_phase_log])
+            curves[_i][2].setData([x for x in PLLs[_i].current_phase_shift_log])
             curves[_i][3].setData([x for x in PLLs[_i].output_voltage_lowpass])
-            #curves[_i][4].setData([x*1 for x in PLLs[_i].output_voltage_log])
+            curves[_i][4].setData([x for x in PLLs[_i].output_voltage_log])
         image_data = np.zeros((number_of_PLLs, number_of_PLLs))
         for _i in range(0, number_of_PLLs):
             for _j in range(0, _i):
