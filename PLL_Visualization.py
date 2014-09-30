@@ -13,9 +13,9 @@ Initialize the Simulation
 
 
 # Simulation Properties
-sample_rate = 40000.0
-carrier_frequency = 200
-lowpass_cutoff_frequency = 100
+sample_rate = 10000.0
+carrier_frequency = 2
+lowpass_cutoff_frequency = 1
 t = 0
 tick = 1 / sample_rate
 
@@ -46,11 +46,11 @@ test_signals = []
 
 # Create PLL
 for i in range(0, number_of_PLLs):
-    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1, 0))#1.57079))
+    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 0))#1.57079))
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
-    test_signals.append(SineSignal(1, carrier_frequency, pi/2, noise_level))
+    test_signals.append(SineSignal(1, carrier_frequency, 0, noise_level=noise_level))
 
 #for i in range(0, number_of_PLLs):
     #PLLs[i].set_feedback_signal_lock(True, 2)
@@ -81,14 +81,13 @@ for i in range(0, number_of_PLLs):
     plotAreas[i].enableAutoRange('xy', True)
     curves.append(
         [plotAreas[i].plot(pen=(255, 0, 0)), plotAreas[i].plot(pen=(0, 255, 0)), plotAreas[i].plot(pen=(0, 0, 255)),
-         plotAreas[i].plot(pen=(255, 128, 0)), plotAreas[i].plot(pen=(255, 255, 255))])
+         plotAreas[i].plot(pen=(255, 255, 255))])
 
     legend = pg.LegendItem(offset=(0, 1))
     legend.addItem(curves[i][0], "Input Signal")
     legend.addItem(curves[i][1], "Detected Phase")
     legend.addItem(curves[i][2], "Current Phase Shift")
-    legend.addItem(curves[i][3], "Lowpass Output")
-    legend.addItem(curves[i][4], "Output Voltage")
+    legend.addItem(curves[i][3], "Output Voltage")
     legend.setParentItem(plotAreas[i])
 
 img = pg.ImageItem(autoLevels=False)
@@ -103,7 +102,7 @@ img_view = img_win.addViewBox()
 img_view.addItem(img)
 
 # Decimation for the display to speed up computation
-display_decimation = 10
+display_decimation = 100
 frame_counter = 0
 
 # Create loop timer
@@ -135,9 +134,8 @@ def update():
         for _i in range(0, number_of_PLLs):
             curves[_i][0].setData([x for x in test_signals[_i].signal_log])
             curves[_i][1].setData([x for x in PLLs[_i].detected_phase_log])
-            curves[_i][2].setData([x for x in PLLs[_i].current_phase_shift_log])
-            curves[_i][3].setData([x for x in PLLs[_i].output_voltage_lowpass])
-            curves[_i][4].setData([x for x in PLLs[_i].output_voltage_log])
+            curves[_i][2].setData([x for x in PLLs[_i].applied_phase_shift_log])
+            curves[_i][3].setData([x for x in PLLs[_i].output_voltage_log])
         image_data = np.zeros((number_of_PLLs, number_of_PLLs))
         for _i in range(0, number_of_PLLs):
             for _j in range(0, _i):
