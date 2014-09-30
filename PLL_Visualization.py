@@ -11,6 +11,8 @@ from TestSignals import SineSignal
 Initialize the Simulation
 """
 
+# Renderer Properties
+render_video = False
 
 # Simulation Properties
 sample_rate = 10000.0
@@ -31,9 +33,10 @@ test_signals = []
 # Training Configuration
 lock_feedback_signal = True  # Set to false for no training
 feedback_signal_lock_profile = np.ones(number_of_PLLs)
-for i in range(0,number_of_PLLs):
-    feedback_signal_lock_profile[i] *= (i % 2) + 1  # Set lock profile to alternating pattern (1, 2, 1, 2, 1, 2, ...)
-                                                    # Change the modulus operand for different length checker patterns
+for i in range(0, number_of_PLLs):
+    if i == 1 or i == 4 or i == 5 or i == 6 or i == 9:
+        feedback_signal_lock_profile[i] *= (i % 3) + 1  # Set lock profile to alternating pattern (1, 2, 1, 2, 1, 2, ...)
+                                                        # Change the modulus operand for different length checker patterns
 
 # Generate a random symmetric phase weight matrix
 phase_weight_matrix = np.random.randn(number_of_PLLs, number_of_PLLs)
@@ -114,8 +117,19 @@ img.setImage(data)
 img_view = img_win.addViewBox()
 img_view.addItem(img)
 
+if render_video:
+    # create an exporter instance, as an argument give it
+    # the item you wish to export
+    exporter = pg.exporters.ImageExporter.ImageExporter(img)
+
+    # set export parameters if needed
+    exporter.parameters()['width'] = img_win.width()   # (note this also affects height parameter)
+
 # Decimation for the display to speed up computation
-display_decimation = 100
+if render_video:
+    display_decimation = 1
+else:
+    display_decimation = 100
 frame_counter = 0
 
 # Create loop timer
@@ -154,6 +168,8 @@ def update():
             for _j in range(0, _i):
                 image_data[_j][_i] = PLLs[_i].applied_phase_shift_log[-1] - PLLs[_j].applied_phase_shift_log[-1]
         img.setImage(image_data, autoLevels=False)
+        if render_video:
+            exporter.export('.\Images\img_' + str(frame_counter).zfill(5) + '.png')
     # Iterate the time counter according to the sample rate
     t += tick
     # Iterate the display frame counter
