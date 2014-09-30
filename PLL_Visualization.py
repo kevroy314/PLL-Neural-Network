@@ -13,47 +13,60 @@ Initialize the Simulation
 
 
 # Simulation Properties
-sample_rate = 40000.0
-carrier_frequency = 200
-lowpass_cutoff_frequency = 1
+sample_rate = 10000.0
+carrier_frequency = 2
+lowpass_cutoff_frequency = 1  # Must be <= carrier_frequency/2
+number_of_PLLs = 10
+
 t = 0
 tick = 1 / sample_rate
-
-number_of_PLLs = 1
 PLLs = []
 
-phase_weight_matrix = [
-    [1, 0, 0, 0, 1],
-    [0, 1, 0, 1, 0],
-    [0, 0, 1, 0, 0],
-    [0, 1, 0, 1, 0],
-    [1, 0, 0, 0, 1]
-]
+# Test Signal Properties
+noise_level = 0.0
+duration = 1
 
+test_signals = []
+
+# Training Configuration
+lock_feedback_signal = True  # Set to false for no training
+feedback_signal_lock_profile = np.ones(number_of_PLLs)
+for i in range(0,number_of_PLLs):
+    feedback_signal_lock_profile[i] *= (i % 2) + 1  # Set lock profile to alternating pattern (1, 2, 1, 2, 1, 2, ...)
+                                                    # Change the modulus operand for different length checker patterns
+
+# Generate a random symmetric phase weight matrix
+phase_weight_matrix = np.random.randn(number_of_PLLs, number_of_PLLs)
+phase_weight_matrix += np.array(phase_weight_matrix).transpose()
+phase_weight_matrix /= 2
+
+# Print the weight matrix in a readable way
+col_width = max(len(word.astype('|S10')) for row in phase_weight_matrix for word in row) + 2  # Padding
+for row in phase_weight_matrix:
+    print "".join(word.astype('|S10').ljust(col_width) for word in row)
+
+# Make the connectivity matrix fully connected
 connectivity_matrix = np.ones([number_of_PLLs, number_of_PLLs])
 
-# Validate Weight Matrix
+# Validate Weight Matrix Symmetry
 if (np.array(phase_weight_matrix).transpose() != np.array(phase_weight_matrix)).any():
     print "Error: Phase Offset Matrix Not Symmetric Across Diagonal."
 else:
     print "Array Symmetry Validated."
 
-# Test Signal Properties
-noise_level = 1
-duration = 4
-test_signals = []
-
-
-# Create PLL
+# Create PLLs
 for i in range(0, number_of_PLLs):
-    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1, 1.57079))
+    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1.57079))
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
-    test_signals.append(SineSignal(1, carrier_frequency, pi/5, noise_level))
+    test_signals.append(SineSignal(1, carrier_frequency, 0, noise_level=noise_level))
 
-#for i in range(0, number_of_PLLs):
-    #PLLs[i].set_feedback_signal_lock(True, 2)
+# Lock Feedback Signal (if specified)
+if lock_feedback_signal:
+    for i in range(0, number_of_PLLs):
+        PLLs[i].set_feedback_signal_lock(True, feedback_signal_lock_profile[i])
+
 
 """
 Initialize the GUI
@@ -81,14 +94,13 @@ for i in range(0, number_of_PLLs):
     plotAreas[i].enableAutoRange('xy', True)
     curves.append(
         [plotAreas[i].plot(pen=(255, 0, 0)), plotAreas[i].plot(pen=(0, 255, 0)), plotAreas[i].plot(pen=(0, 0, 255)),
-         plotAreas[i].plot(pen=(255, 128, 0)), plotAreas[i].plot(pen=(255, 255, 255))])
+         plotAreas[i].plot(pen=(255, 255, 255))])
 
     legend = pg.LegendItem(offset=(0, 1))
     legend.addItem(curves[i][0], "Input Signal")
     legend.addItem(curves[i][1], "Detected Phase")
     legend.addItem(curves[i][2], "Current Phase Shift")
-    legend.addItem(curves[i][3], "Lowpass Output")
-    legend.addItem(curves[i][4], "Output Voltage")
+    legend.addItem(curves[i][3], "Output Voltage")
     legend.setParentItem(plotAreas[i])
 
 img = pg.ImageItem(autoLevels=False)
@@ -103,7 +115,7 @@ img_view = img_win.addViewBox()
 img_view.addItem(img)
 
 # Decimation for the display to speed up computation
-display_decimation = 50
+display_decimation = 100
 frame_counter = 0
 
 # Create loop timer
@@ -135,13 +147,12 @@ def update():
         for _i in range(0, number_of_PLLs):
             curves[_i][0].setData([x for x in test_signals[_i].signal_log])
             curves[_i][1].setData([x for x in PLLs[_i].detected_phase_log])
-            curves[_i][2].setData([x for x in PLLs[_i].current_phase_shift_log])
-            curves[_i][3].setData([x*100 for x in PLLs[_i].output_voltage_lowpass])
-            curves[_i][4].setData([x for x in PLLs[_i].output_voltage_log])
+            curves[_i][2].setData([x for x in PLLs[_i].applied_phase_shift_log])
+            curves[_i][3].setData([x for x in PLLs[_i].output_voltage_log])
         image_data = np.zeros((number_of_PLLs, number_of_PLLs))
         for _i in range(0, number_of_PLLs):
             for _j in range(0, _i):
-                image_data[_j][_i] = PLLs[_i].current_phase_shift_log[-1] - PLLs[_j].current_phase_shift_log[-1]
+                image_data[_j][_i] = PLLs[_i].applied_phase_shift_log[-1] - PLLs[_j].applied_phase_shift_log[-1]
         img.setImage(image_data, autoLevels=False)
     # Iterate the time counter according to the sample rate
     t += tick

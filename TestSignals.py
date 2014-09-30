@@ -5,7 +5,7 @@ import random
 
 # Class representing the functioning of sine signal
 class SineSignal:
-    def __init__(self, _amplitude, _frequency, _phase, _noise_level):
+    def __init__(self, _amplitude, _frequency, _phase, noise_level=0, voltage_offset=0):
         """
         The constructor for a sine wave signal.
 
@@ -18,7 +18,9 @@ class SineSignal:
         self.two_pi_frequency = 2 * pi * _frequency
         self.amplitude = _amplitude
         self.phase = _phase
-        self.noise_level = _noise_level
+        self.voltage_offset = voltage_offset
+        self.noise_level = noise_level
+
         self.signal_log = []
 
     def update(self, _t):
@@ -31,6 +33,6 @@ class SineSignal:
         test_sig = \
             self.amplitude * \
             sin(_t * self.two_pi_frequency + self.phase) + \
-            ((random.random() * 2 - 1) * self.noise_level) + float(1)
+            ((random.random() * 2 - 1) * self.noise_level) + self.voltage_offset
         self.signal_log.append(test_sig)
         return test_sig
