@@ -17,7 +17,7 @@ render_video = False
 # Simulation Properties
 sample_rate = 10000.0
 carrier_frequency = 2
-lowpass_cutoff_frequency = 1  # Must be <= carrier_frequency/2
+lowpass_cutoff_frequency = 0.5  # Must be <= carrier_frequency/2
 number_of_PLLs = 10
 paused = False
 
@@ -35,25 +35,29 @@ test_signals = []
 lock_feedback_signal = False  # Set to false for no training
 feedback_signal_lock_profile = np.ones(number_of_PLLs)
 for i in range(0, number_of_PLLs):  # Set lock profile
-    #if i == 0:
-    #    feedback_signal_lock_profile[i] *= 2
-    #if i == 1:
-    #    feedback_signal_lock_profile[i] *= 3
-    #if i == 2:
-    #    feedback_signal_lock_profile[i] *= 2
-    #if i == 3:
-    #    feedback_signal_lock_profile[i] *= 3
-    #if i == 4:
-    #    feedback_signal_lock_profile[i] *= 2
-    #if i == 5:
-    #    feedback_signal_lock_profile[i] *= 5
-    #if i == 6:
-    #    feedback_signal_lock_profile[i] *= 3
-    #if i == 8:
-    #    feedback_signal_lock_profile[i] *= 3
+    if i == 0:
+        feedback_signal_lock_profile[i] *= 2*pi
+    if i == 1:
+        feedback_signal_lock_profile[i] *= 4*pi
+    if i == 2:
+        feedback_signal_lock_profile[i] *= 8*pi
+    if i == 3:
+        feedback_signal_lock_profile[i] *= 16*pi
+    if i == 4:
+        feedback_signal_lock_profile[i] *= 1
+    if i == 5:
+        feedback_signal_lock_profile[i] *= 1
+    if i == 6:
+        feedback_signal_lock_profile[i] *= 1
+    if i == 7:
+        feedback_signal_lock_profile[i] *= 1
+    if i == 8:
+        feedback_signal_lock_profile[i] *= 1
+    if i == 9:
+        feedback_signal_lock_profile[i] *= 1
     #else:
-    #    feedback_signal_lock_profile[i] *= 1
-    feedback_signal_lock_profile[i] *= (i % 2) + 1
+        #feedback_signal_lock_profile[i] *= 1
+    #feedback_signal_lock_profile[i] *= (i % 2) + 1
 
 # Generate a random symmetric phase weight matrix
 phase_weight_matrix = np.random.randn(number_of_PLLs, number_of_PLLs)
@@ -126,7 +130,7 @@ img_win = pg.GraphicsWindow(title="PLL Example Animated")
 img_win.resize(300, 300)
 img_win.setWindowTitle('PLL Example Phase Image')
 
-img = pg.ImageItem(autoLevels=False)
+img = pg.ImageItem(autoLevels=False, levels=(-2.0, 2.0))
 w = pg.GradientWidget()
 w.setTickColor(0, QtGui.QColor(255, 69, 00))
 w.setTickColor(1, QtGui.QColor(0, 0, 128))
@@ -242,6 +246,23 @@ def load_lock_profile():
 loadLockProfileBtn.clicked.connect(load_lock_profile)
 l.addWidget(loadLockProfileBtn, 5, 0)
 
+# Decimation for the display to speed up computation
+if render_video:
+    display_decimation = 1
+else:
+    display_decimation = 10
+
+
+def decimation_value_changed(sb):
+    global display_decimation
+    display_decimation = sb.value()
+
+decimationLabel = QtGui.QLabel("Display Decimation, min=0, no maximum.")
+decimationSpinBox = pg.SpinBox(value=display_decimation, bounds=[1, None], step=1)
+l.addWidget(decimationLabel, 6, 0)
+l.addWidget(decimationSpinBox, 7, 0)
+decimationSpinBox.sigValueChanged.connect(decimation_value_changed)
+
 if render_video:
     # create an exporter instance, as an argument give it
     # the item you wish to export
@@ -250,11 +271,6 @@ if render_video:
     # set export parameters if needed
     exporter.parameters()['width'] = img_win.width()  # (note this also affects height parameter)
 
-# Decimation for the display to speed up computation
-if render_video:
-    display_decimation = 1
-else:
-    display_decimation = 10
 frame_counter = 0
 
 # Create loop timer
@@ -290,9 +306,15 @@ def update():
                 curves[_i][2].setData([x for x in PLLs[_i].applied_phase_shift_log])
                 curves[_i][3].setData([x for x in PLLs[_i].output_voltage_log])
             image_data = np.zeros((number_of_PLLs, number_of_PLLs))
+            pos = 0
             for _i in range(0, number_of_PLLs):
-                for _j in range(0, _i):
-                    image_data[_j][_i] = PLLs[_i].applied_phase_shift_log[-1] - PLLs[_j].applied_phase_shift_log[-1]
+                for _j in range(_i+1, number_of_PLLs):
+                    row = pos%8
+                    col = np.floor(pos/8)
+                    image_data[row][col] = PLLs[_i].v(PLLs[_i].applied_phase_shift_log[-1]) * \
+                                        PLLs[_j].v(PLLs[_j].applied_phase_shift_log[-1])
+                    pos += 1
+            print pos
             img.setImage(image_data, autoLevels=False)
             if render_video:
                 exporter.export('.\Images\img_' + str(frame_counter).zfill(5) + '.png')
