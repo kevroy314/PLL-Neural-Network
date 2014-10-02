@@ -20,8 +20,8 @@ class PLL:
         """
         self.sample_rate = _sample_rate
 
-        self.current_phase_shift = 0
-        self.next_phase_shift = 0
+        self.current_phase_shift = 1
+        self.next_phase_shift = 1
         self.persistent_phase_shift = _phase_shift
 
         self.carrier_frequency = _carrier_frequency
@@ -39,9 +39,6 @@ class PLL:
         self.detected_phase_log = []
         self.applied_phase_shift_log = []
         self.output_voltage_log = []
-
-        self.lock_feedback_signal = False
-        self.lock_feedback_signal_value = 0
 
     @staticmethod
     def butter_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, order=5):
@@ -115,10 +112,7 @@ class PLL:
 
         # Phase Detector
         detected_phase = 0
-        if self.lock_feedback_signal:
-            # Override the existing feedback signal with the locked value
-            detected_phase = (_y * self.lock_feedback_signal_value * self.phase_detector_voltage_gain)
-        elif len(self.output_voltage_log) != 0:
+        if len(self.output_voltage_log) != 0:
             detected_phase = _y * self.previous_voltage * self.phase_detector_voltage_gain
         self.detected_phase_log.append(detected_phase)
 
@@ -128,18 +122,18 @@ class PLL:
 
         # Determine Weighted Phase Adjustment
 
-        phase_aggregator = 0
+        phase_aggregator = float(0)
         for _j in range(0, len(_PLLs)):
-            v_ij = _connectivity_matrix[_self_index][_j] * cos(_weight_matrix[_self_index][_j]).real
-            w_ij = _connectivity_matrix[_self_index][_j] * sin(_weight_matrix[_self_index][_j]).imag
+            #v_ij = _connectivity_matrix[_self_index][_j] * cos(_weight_matrix[_self_index][_j]).real
+            #w_ij = _connectivity_matrix[_self_index][_j] * sin(_weight_matrix[_self_index][_j]).imag
 
-            phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
-                                w_ij * self.v(_PLLs[_j].current_phase_shift)
-
+            #phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
+            #                    w_ij * self.v(_PLLs[_j].current_phase_shift)
+            phase_aggregator += _connectivity_matrix[_self_index][_j] * cos(_PLLs[_j].current_phase_shift)
         if len(_PLLs) == 1:
             self.next_phase_shift = filtered_phase
         else:
-            self.next_phase_shift = (filtered_phase * phase_aggregator)
+            self.next_phase_shift = (sin(filtered_phase) * phase_aggregator)
         self.applied_phase_shift_log.append(self.next_phase_shift)
 
         # Voltage Controlled Oscillator
@@ -159,10 +153,3 @@ class PLL:
 
             """
         self.current_phase_shift = self.next_phase_shift
-
-    def set_feedback_signal_lock(self, locked, lock_value=0):
-        self.lock_feedback_signal = locked
-        if locked:
-            self.lock_feedback_signal_value = lock_value
-        else:
-            self.lock_feedback_signal_value = 0
