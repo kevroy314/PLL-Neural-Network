@@ -36,7 +36,7 @@ PLLs = []
 
 # Test Signal Properties
 noise_level = 0.1
-duration = 1
+duration = 10
 
 test_signals = []
 
@@ -66,7 +66,7 @@ keys = []
 
 for _file in os.listdir(".\keys"):
     if _file.endswith(".bmp"):
-        keys.append(get_image_data_from_file(_file))
+        keys.append(get_image_data_from_file(".\keys\\"+_file))
 
 '''key0 = np.array([[0, 1, 1, 1, 1, 0],
                  [0, 1, 0, 0, 1, 0],
@@ -130,9 +130,11 @@ else:
 for i in range(0, number_of_PLLs):
     PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1.57079))
 
+input_signals = get_image_data_from_file("in.bmp")
+
 # Create Test Signals
 for i in range(0, number_of_PLLs):
-    test_signals.append(SineSignal(1, carrier_frequency, 0, noise_level=noise_level))
+    test_signals.append(SineSignal(1, carrier_frequency, input_signals[i], noise_level=noise_level))
 
 
 """
