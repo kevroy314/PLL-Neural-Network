@@ -1,6 +1,6 @@
 '''
 TODO:
--Add input and training sources from image files (bmps or pngs?)
+-Add input sources from image files (bmps)
 '''
 
 __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
@@ -11,13 +11,16 @@ from pylab import *  # For PLL
 from PLL import PLL
 from TestSignals import SineSignal
 import pickle
+import PIL
+import os
 
 """
 Initialize the Simulation
 """
 
 # Renderer Properties
-render_video = True
+render_video = False
+enableGraphs = True
 
 # Simulation Properties
 sample_rate = 10000.0
@@ -49,7 +52,23 @@ def print_padded_matrix(in_matrix):
     for row in in_matrix:
         print "".join(word.astype('|S10').ljust(col_width) for word in row)
 
-key0 = np.array([[0, 1, 1, 1, 1, 0],
+
+def get_image_data_from_file(filename):
+    _img = PIL.Image.open(filename)
+    _bin_img = _img.convert("P")
+    _data = list(_bin_img.getdata())
+    _data_out = np.zeros((len(_data)))
+    for _i in range(0, len(_data)):
+        _data_out[_i] = _data[_i]
+    return _data_out
+
+keys = []
+
+for _file in os.listdir(".\keys"):
+    if _file.endswith(".bmp"):
+        keys.append(get_image_data_from_file(_file))
+
+'''key0 = np.array([[0, 1, 1, 1, 1, 0],
                  [0, 1, 0, 0, 1, 0],
                  [1, 1, 0, 0, 1, 1],
                  [1, 1, 0, 0, 1, 1],
@@ -81,13 +100,13 @@ key2 = np.array([[0, 1, 1, 1, 1, 0],
                  [0, 1, 1, 0, 0, 0],
                  [1, 1, 1, 1, 1, 1],
                  [1, 1, 1, 1, 1, 1]]).reshape(number_of_PLLs)
-'''key0 = np.array([[0, 0, 0, 0, 0],
+
+key0 = np.array([[0, 0, 0, 0, 0],
                  [0, 1, 0, 1, 0],
                  [0, 0, 0, 0, 0],
                  [1, 0, 0, 0, 1],
                  [0, 1, 1, 1, 0]]).reshape(number_of_PLLs)
 '''
-keys = [key0, key1, key2]
 
 # Make the connectivity matrix fully connected
 connectivity_matrix = np.ones([number_of_PLLs, number_of_PLLs])
@@ -119,10 +138,6 @@ for i in range(0, number_of_PLLs):
 """
 Initialize the GUI
 """
-
-
-# Window Disables
-enableGraphs = False
 
 # Set up application window
 app = QtGui.QApplication([])
