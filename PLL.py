@@ -15,7 +15,7 @@ class PLL:
 
         :param _sample_rate: sample rate in Hz
         :param _carrier_frequency: carrier frequency in Hz
-        :param _voltage_gain: voltage gain as a ratio of existing voltage
+        :param _lowpass_cutoff_frequency: frequency above which components are removed in Hz
         :param _phase_shift: phase shift in radians
         """
         self.sample_rate = _sample_rate
@@ -124,11 +124,11 @@ class PLL:
 
         phase_aggregator = float(0)
         for _j in range(0, len(_PLLs)):
-            #v_ij = _connectivity_matrix[_self_index][_j] * cos(_weight_matrix[_self_index][_j]).real
-            #w_ij = _connectivity_matrix[_self_index][_j] * sin(_weight_matrix[_self_index][_j]).imag
+            # v_ij = _connectivity_matrix[_self_index][_j] * cos(_weight_matrix[_self_index][_j]).real
+            # w_ij = _connectivity_matrix[_self_index][_j] * sin(_weight_matrix[_self_index][_j]).imag
 
-            #phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
-            #                    w_ij * self.v(_PLLs[_j].current_phase_shift)
+            # phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
+            #                     w_ij * self.v(_PLLs[_j].current_phase_shift)
             phase_aggregator += _connectivity_matrix[_self_index][_j] * cos(_PLLs[_j].current_phase_shift)
         if len(_PLLs) == 1:
             self.next_phase_shift = filtered_phase
@@ -148,8 +148,8 @@ class PLL:
 
     def apply_next_phase_shift(self):
         """
-            Updates the phase shift value (kept separate from the update function in order to allow pass-by-reference
-            iteration of the system).
+        Updates the phase shift value (kept separate from the update function in order to allow pass-by-reference
+        iteration of the system).
 
-            """
+        """
         self.current_phase_shift = self.next_phase_shift

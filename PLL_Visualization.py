@@ -1,3 +1,8 @@
+'''
+TODO:
+-Add input and training sources from image files (bmps or pngs?)
+'''
+
 __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from pyqtgraph.Qt import QtGui, QtCore  # For GUI

@@ -3,6 +3,7 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 from pylab import *  # For PLL
 import random
 
+
 # Class representing the functioning of sine signal
 class SineSignal:
     def __init__(self, _amplitude, _frequency, _phase, noise_level=0, voltage_offset=0):
