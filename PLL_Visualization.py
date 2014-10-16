@@ -9,6 +9,7 @@ from pyqtgraph.Qt import QtGui, QtCore  # For GUI
 import pyqtgraph as pg  # For GUI
 from pylab import *  # For PLL
 from PLL import PLL
+from ThreeDVisualizer import ThreeDVisualizer
 from TestSignals import SineSignal
 import pickle
 import PIL
@@ -130,7 +131,7 @@ else:
 for i in range(0, number_of_PLLs):
     PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1.57079))
 
-input_signals = get_image_data_from_file("in.bmp")
+input_signals = get_image_data_from_file("noised_1.bmp")
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
@@ -266,6 +267,18 @@ if render_video:
 
 frame_counter = 0
 
+
+# 3D Test
+
+## precompute height values for all frames
+threed = ThreeDVisualizer(render_width, number_of_PLLs/render_width)
+d = (threed.x ** 2 + threed.y ** 2) * 0.1
+d2 = d ** 0.5 + 0.1
+phi = np.arange(0, np.pi*2, np.pi/20.)
+z = np.sin(d[np.newaxis, ...] + phi.reshape(phi.shape[0], 1, 1)) / d2[np.newaxis, ...]
+index = 0
+
+
 # Create loop timer
 timer = QtCore.QTimer()
 
@@ -276,8 +289,7 @@ Define Simulation Loop
 
 def update():
     global timer, curves, plotAreas, img, t, tick, frame_counter, duration, \
-        PLLs, test_signals, phase_weight_matrix, connectivity_matrix
-
+        PLLs, test_signals, phase_weight_matrix, connectivity_matrix, index, z
     if not paused:
         # Stop the simulation when the duration has completed
         if t >= duration:
@@ -306,6 +318,10 @@ def update():
                     image_data[row][col] = PLLs[_i].v(PLLs[_i].applied_phase_shift_log[-1])# * \
                                            #PLLs[0].v(PLLs[0].applied_phase_shift_log[-1])
             img.setImage(np.rot90(image_data, 3), autoLevels=True)
+            timage_data = np.zeros((render_width, number_of_PLLs/render_width, 4))
+            timage_data[:, :, 0] = np.rot90(image_data, 3)
+            threed.update(timage_data, z[index])
+            index = (index+1) % len(z)
             if render_video:
                 exporter.export('.\Images\img_' + str(frame_counter).zfill(5) + '.png')
         # Iterate the time counter according to the sample rate
