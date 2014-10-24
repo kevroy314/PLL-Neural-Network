@@ -7,12 +7,11 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from pyqtgraph.Qt import QtGui, QtCore  # For GUI
 import pyqtgraph as pg  # For GUI
-from PLL import PLL
-from ThreeDVisualizer import ThreeDVisualizer
+from PIL import Image
+from PLL_Complex import PLL_Complex
 from TwoDVisualizer import TwoDVisualizer
-from GraphVisualizer import GraphVisualizer
 from ConfigurationWindow import ConfigurationWindow
-from TestSignals import SineSignal
+from TestSignals import ComplexSineSignal
 from HelperFunctions import *
 import os
 
@@ -21,8 +20,7 @@ Initialize the Simulation
 """
 
 # Renderer Properties
-render_video = False
-enableGraphs = True
+render_video = True
 
 # Simulation Properties
 sample_rate = 10000.0
@@ -50,19 +48,21 @@ for _file in os.listdir(".\complex_keys"):
     if _file.endswith(".bmp"):
         keys.append(get_rgb_image_data_from_file(".\complex_keys\\"+_file))
 
-# TODO MAKE CONNECTIVITY COMPLEX AND CHANGE TO COMPLEX LEARNING RULE
-
 # Make the connectivity matrix fully connected
-connectivity_matrix = np.ones([number_of_PLLs, number_of_PLLs])
+connectivity_matrix = array(np.ones([number_of_PLLs, number_of_PLLs]), dtype=complex)
 
 for _i in range(0, number_of_PLLs):
     for _j in range(0, number_of_PLLs):
         _sum = float(0)
         for _k in range(0, len(keys)):
-            _sum += keys[_k][_i] * keys[_k][_j]
+            ki = complex(float(keys[_k][_i][0])/255, float(keys[_k][_i][2])/255)
+            kj = complex(float(keys[_k][_j][0])/255, float(-keys[_k][_j][2])/255)  # conjugate
+            _sum += ki * kj
         connectivity_matrix[_i][_j] = _sum / number_of_PLLs
-
-print_padded_matrix(connectivity_matrix)
+print "Real Part"
+print_padded_matrix(connectivity_matrix.real)
+print "Imag Part"
+print_padded_matrix(connectivity_matrix.imag)
 
 # Validate Weight Matrix Symmetry
 if (np.array(phase_weight_matrix).transpose() != np.array(phase_weight_matrix)).any():
@@ -72,13 +72,13 @@ else:
 
 # Create PLLs
 for i in range(0, number_of_PLLs):
-    PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1.57079))
+    PLLs.append(PLL_Complex(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1.57079))
 
-input_signals = get_image_data_from_file("noised_1.bmp")
+input_signals = np.zeros(number_of_PLLs)
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
-    test_signals.append(SineSignal(1, carrier_frequency, input_signals[i], noise_level=noise_level))
+    test_signals.append(ComplexSineSignal(1, carrier_frequency, input_signals[i], noise_level=noise_level))
 
 
 """
@@ -89,37 +89,13 @@ Initialize the GUI
 app = QtGui.QApplication([])
 pg.setConfigOptions(antialias=True)
 
-if enableGraphs:
-    graph_vis = GraphVisualizer(5,
-                                [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)],
-                                ["Input Signal", "Detected Phase", "Current Phase Shift", "Output Voltage"])
-
-config_win = ConfigurationWindow()
+config_win = ConfigurationWindow(1)
 
 twod = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width))
+twodimag = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width))
 
-display_decimation = 10
-
-if render_video:
-    # Decimation for the display to speed up computation
-    display_decimation = 1
-    # create an exporter instance, as an argument give it
-    # the item you wish to export
-    exporter = pg.exporters.ImageExporter.ImageExporter(twod.img)
-
-    # set export parameters if needed
-    exporter.parameters()['width'] = render_width  # (note this also affects height parameter)
-
+display_decimation = config_win.display_decimation
 frame_counter = 0
-
-## precompute height values for all frames
-threed = ThreeDVisualizer(int(render_width), int(number_of_PLLs/render_width))
-d = (threed.x ** 2 + threed.y ** 2) * 0.1
-d2 = d ** 0.5 + 0.1
-phi = np.arange(0, np.pi*2, np.pi/20.)
-z = np.sin(d[np.newaxis, ...] + phi.reshape(phi.shape[0], 1, 1)) / d2[np.newaxis, ...]
-index = 0
-
 
 # Create loop timer
 timer = QtCore.QTimer()
@@ -130,8 +106,8 @@ Define Simulation Loop
 
 
 def update():
-    global timer, twod, threed, graph_vis, config_win, t, tick, frame_counter, duration, \
-        PLLs, test_signals, phase_weight_matrix, connectivity_matrix, index, paused, display_decimation
+    global timer, twod, config_win, t, tick, frame_counter, duration, \
+        PLLs, test_signals, phase_weight_matrix, connectivity_matrix, paused, display_decimation
     paused, phase_weight_matrix, display_decimation = config_win.update(phase_weight_matrix)
     if not paused:
         # Stop the simulation when the duration has completed
@@ -148,30 +124,32 @@ def update():
 
         # Graph the PLL states according to the display decimation
         if frame_counter % display_decimation == 0:
-            if enableGraphs:
-                data = []
-                for _i in range(0, graph_vis.num_rows):
-                    data.append([x for x in test_signals[_i].signal_log])
-                    data.append([x for x in PLLs[_i].detected_phase_log])
-                    data.append([x for x in PLLs[_i].applied_phase_shift_log])
-                    data.append([x for x in PLLs[_i].output_voltage_log])
-                graph_vis.update(data)
-            image_data = np.zeros((number_of_PLLs/render_width, render_width))
+            image_data = array(np.zeros((number_of_PLLs/render_width, render_width)), dtype=complex)
             for _i in range(0, number_of_PLLs):
                     row = np.floor(_i / render_width)
                     col = _i % render_width
                     image_data[row][col] = PLLs[_i].v(PLLs[_i].applied_phase_shift_log[-1])
             img_rotated = np.rot90(image_data, 3)
-            twod.update(img_rotated, autoLevels=True)
-            timage_data = np.zeros((threed.width, threed.height, 4))
-            timage_data[:, :, 0] = img_rotated
-            timage_data[:, :, 1] = img_rotated
-            timage_data[:, :, 2] = img_rotated
-            timage_data[:, :, 3] = img_rotated
-            threed.update(z, timage_data, index)
-            index = (index+1) % len(z)
+            twod.update(img_rotated.real, autoLevels=True)
+            twodimag.update(img_rotated.imag, autoLevels=True)
             if render_video:
-                exporter.export('.\Images\img_' + str(frame_counter).zfill(5) + '.png')
+                # r, g, and b are 512x512 float arrays with values >= 0 and < 1.
+                rgbArray = np.zeros((number_of_PLLs/render_width, render_width, 3), 'uint8')
+                rgbArray[..., 0] = image_data.real * 255
+                rgbArray[..., 1] = 0
+                rgbArray[..., 2] = image_data.imag * 255
+                img = Image.fromarray(rgbArray)
+                img.save('.\Images\img_' + str(frame_counter).zfill(5) + '.png')
+                realexporter = pg.exporters.ImageExporter.ImageExporter(twod.img)
+                imagexporter = pg.exporters.ImageExporter.ImageExporter(twodimag.img)
+
+                # set export parameters if needed
+                realexporter.parameters()['width'] = int(render_width)  # (note this also affects height parameter)
+                realexporter.parameters()['height'] = int(number_of_PLLs/render_width)  # (note this also affects height parameter)
+                imagexporter.parameters()['width'] = int(render_width)  # (note this also affects height parameter)
+                imagexporter.parameters()['height'] = int(number_of_PLLs/render_width)  # (note this also affects height parameter)
+                realexporter.export('.\Real Images\img_' + str(frame_counter).zfill(5) + '.png')
+                imagexporter.export('.\Imaginary Images\img_' + str(frame_counter).zfill(5) + '.png')
         # Iterate the time counter according to the sample rate
         t += tick
         # Iterate the display frame counter

@@ -5,7 +5,7 @@ from pylab import *
 
 
 # Class representing the functioning of a Phase-Locked Loop
-class PLL:
+class PLL_Complex:
     def __init__(self, _sample_rate, _carrier_frequency, _lowpass_cutoff_frequency, _phase_shift,
                  phase_detector_voltage_gain=1, vco_voltage_gain=1, vco_voltage_offset=0):
         """
@@ -120,21 +120,19 @@ class PLL:
 
         # Determine Weighted Phase Adjustment
 
-        # TODO CHANGE TO COMPLEX RULE
-
         phase_aggregator = float(0)
         for _j in range(0, len(_PLLs)):
-            # v_ij = _connectivity_matrix[_self_index][_j] * cos(_weight_matrix[_self_index][_j]).real
-            # w_ij = _connectivity_matrix[_self_index][_j] * sin(_weight_matrix[_self_index][_j]).imag
-
-            # phase_aggregator += v_ij * self.v(_PLLs[_j].current_phase_shift - (pi / 2)) + \
-            #                     w_ij * self.v(_PLLs[_j].current_phase_shift)
-            phase_aggregator += _connectivity_matrix[_self_index][_j] * cos(_PLLs[_j].current_phase_shift)
+            phase_aggregator += (_connectivity_matrix[_self_index][_j].real *
+                                 self.v(_PLLs[_j].current_phase_shift - pi/2)) \
+                                + (_connectivity_matrix[_self_index][_j].imag *
+                                   self.v(_PLLs[_j].current_phase_shift))
         if len(_PLLs) == 1:
             self.next_phase_shift = filtered_phase
         else:
-            self.next_phase_shift = (sin(filtered_phase) * phase_aggregator)
+            self.next_phase_shift = (self.v(filtered_phase) * phase_aggregator)
         self.applied_phase_shift_log.append(self.next_phase_shift)
+
+        # TODO DEBUG VCO OVERFLOW IN SIN
 
         # Voltage Controlled Oscillator
         output_voltage = self.vco_voltage_gain * sin(_t * self.two_pi_carrier_frequency + self.next_phase_shift) + \

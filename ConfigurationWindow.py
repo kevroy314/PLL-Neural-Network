@@ -7,8 +7,8 @@ import pickle
 
 
 class ConfigurationWindow:
-    def __init__(self):
-        self.display_decimation = 10
+    def __init__(self, _display_decimation=10):
+        self.display_decimation = _display_decimation
         self.paused = False
         self.phase_weight_matrix = 0
         self.loaded_phase_weight_matrix = False
