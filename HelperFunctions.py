@@ -19,3 +19,10 @@ def get_image_data_from_file(filename):
     for _i in range(0, len(_data)):
         _data_out[_i] = _data[_i]
     return _data_out
+
+
+def get_rgb_image_data_from_file(filename):
+    _img = PIL.Image.open(filename)
+    #_bin_img = _img.convert("P")
+    _data = list(_img.getdata())
+    return np.array(_data)

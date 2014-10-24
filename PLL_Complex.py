@@ -120,6 +120,8 @@ class PLL:
 
         # Determine Weighted Phase Adjustment
 
+        # TODO CHANGE TO COMPLEX RULE
+
         phase_aggregator = float(0)
         for _j in range(0, len(_PLLs)):
             # v_ij = _connectivity_matrix[_self_index][_j] * cos(_weight_matrix[_self_index][_j]).real

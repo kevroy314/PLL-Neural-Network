@@ -29,6 +29,7 @@ class ConfigurationWindow:
         self.pauseBtn.clicked.connect(self.pause)
         self.layout.addWidget(self.pauseBtn, 0, 0)
 
+        '''
         self.saveWeightMatrixBtn = QtGui.QPushButton("Save Weight Matrix", self.win)
 
         self.saveWeightMatrixBtn.clicked.connect(self.save_weight_matrix)
@@ -38,6 +39,7 @@ class ConfigurationWindow:
 
         self.loadWeightMatrixBtn.clicked.connect(self.load_weight_matrix)
         self.layout.addWidget(self.loadWeightMatrixBtn, 2, 0)
+        '''
 
         self.decimationLabel = QtGui.QLabel("Display Decimation, min=0, no maximum.")
         self.decimationSpinBox = pg.SpinBox(value=self.display_decimation, bounds=[1, None], step=1)
@@ -48,6 +50,7 @@ class ConfigurationWindow:
     def decimation_value_changed(self, _sb):
         self.display_decimation = _sb.value()
 
+    '''
     def load_weight_matrix(self):
         filename = QtGui.QFileDialog.getOpenFileName(self.loadWeightMatrixBtn, "Load Weight Matrix", "", "*.phases")
         if filename != "":
@@ -62,7 +65,7 @@ class ConfigurationWindow:
             file_object = open(filename, 'w')
             pickle.dump(self.phase_weight_matrix, file_object)
             print_padded_matrix(self.phase_weight_matrix)
-
+    '''
     def pause(self):
         self.paused = not self.paused
         display_text = "Pause"
