@@ -2,12 +2,17 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from pyqtgraph.Qt import QtGui, QtCore  # For GUI
 import pyqtgraph as pg  # For GUI
-from HelperFunctions import *
-import pickle
+#import pickle
 
 
 class ConfigurationWindow:
     def __init__(self, _display_decimation=10):
+        """
+        Create a ConfigurationWindow for storing/modifying simulation properties.
+
+        :param _display_decimation: The number of iterations displays should allow to complete before refreshing
+                                    (default=10)
+        """
         self.display_decimation = _display_decimation
         self.paused = False
         self.phase_weight_matrix = 0
@@ -48,6 +53,11 @@ class ConfigurationWindow:
         self.decimationSpinBox.sigValueChanged.connect(self.decimation_value_changed)
 
     def decimation_value_changed(self, _sb):
+        """
+        Get the value of the decimation control and store it in the decimation variable.
+
+        :param _sb: The decimation control.
+        """
         self.display_decimation = _sb.value()
 
     '''
@@ -67,6 +77,10 @@ class ConfigurationWindow:
             print_padded_matrix(self.phase_weight_matrix)
     '''
     def pause(self):
+        """
+            Toggle function for changing pause state.
+
+        """
         self.paused = not self.paused
         display_text = "Pause"
         if self.paused:
@@ -74,6 +88,11 @@ class ConfigurationWindow:
         self.pauseBtn.setText(display_text)
 
     def update(self, _phase_weight_matrix):
+        """
+
+        :param _phase_weight_matrix: Phase Weight Matrix update for config window
+        :return: The current config window parameters (pause, phase weight matrix, display decimation)
+        """
         if not self.loaded_phase_weight_matrix:
             self.phase_weight_matrix = _phase_weight_matrix
         else:

@@ -7,13 +7,13 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from pyqtgraph.Qt import QtGui, QtCore  # For GUI
 import pyqtgraph as pg  # For GUI
-from PLL import PLL
-from ThreeDVisualizer import ThreeDVisualizer
-from TwoDVisualizer import TwoDVisualizer
-from GraphVisualizer import GraphVisualizer
-from ConfigurationWindow import ConfigurationWindow
-from TestSignals import SineSignal
-from HelperFunctions import *
+from lib.PLLs.PLL import PLL
+from lib.visualization.ThreeDVisualizer import ThreeDVisualizer
+from lib.visualization.TwoDVisualizer import TwoDVisualizer
+from lib.visualization.GraphVisualizer import GraphVisualizer
+from lib.app_modules.ConfigurationWindow import ConfigurationWindow
+from lib.app_modules.HelperFunctions import *
+from lib.signals.TestSignals import SineSignal
 import os
 
 """
@@ -42,13 +42,11 @@ duration = 10
 
 test_signals = []
 
-phase_weight_matrix = np.ones((number_of_PLLs, number_of_PLLs))
-
 keys = []
 
-for _file in os.listdir(".\keys"):
+for _file in os.listdir(".\\input\\keys"):
     if _file.endswith(".bmp"):
-        keys.append(get_image_data_from_file(".\keys\\"+_file))
+        keys.append(get_image_data_from_file(".\\input\\keys\\"+_file))
 
 # Make the connectivity matrix fully connected
 connectivity_matrix = np.ones([number_of_PLLs, number_of_PLLs])
@@ -63,7 +61,7 @@ for _i in range(0, number_of_PLLs):
 print_padded_matrix(connectivity_matrix)
 
 # Validate Weight Matrix Symmetry
-if (np.array(phase_weight_matrix).transpose() != np.array(phase_weight_matrix)).any():
+if (np.array(connectivity_matrix).transpose() != np.array(connectivity_matrix)).any():
     print "Error: Phase Offset Matrix Not Symmetric Across Diagonal."
 else:
     print "Array Symmetry Validated."
@@ -72,7 +70,10 @@ else:
 for i in range(0, number_of_PLLs):
     PLLs.append(PLL(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1.57079))
 
-input_signals = get_image_data_from_file("noised_1.bmp")
+for _file in os.listdir(".\\input\\in_signals"):
+    if _file.endswith(".bmp"):
+        input_signals = get_image_data_from_file(".\\input\\in_signals\\"+_file)
+        break
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
@@ -92,15 +93,12 @@ if enableGraphs:
                                 [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)],
                                 ["Input Signal", "Detected Phase", "Current Phase Shift", "Output Voltage"])
 
-config_win = ConfigurationWindow()
-
 twod = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width))
 
-display_decimation = 10
+display_decimation = 2
+config_win = ConfigurationWindow(display_decimation)
 
 if render_video:
-    # Decimation for the display to speed up computation
-    display_decimation = 1
     # create an exporter instance, as an argument give it
     # the item you wish to export
     exporter = pg.exporters.ImageExporter.ImageExporter(twod.img)
@@ -109,15 +107,6 @@ if render_video:
     exporter.parameters()['width'] = render_width  # (note this also affects height parameter)
 
 frame_counter = 0
-
-## precompute height values for all frames
-threed = ThreeDVisualizer(int(render_width), int(number_of_PLLs/render_width))
-d = (threed.x ** 2 + threed.y ** 2) * 0.1
-d2 = d ** 0.5 + 0.1
-phi = np.arange(0, np.pi*2, np.pi/20.)
-z = np.sin(d[np.newaxis, ...] + phi.reshape(phi.shape[0], 1, 1)) / d2[np.newaxis, ...]
-index = 0
-
 
 # Create loop timer
 timer = QtCore.QTimer()
@@ -128,9 +117,9 @@ Define Simulation Loop
 
 
 def update():
-    global timer, twod, threed, graph_vis, config_win, t, tick, frame_counter, duration, \
-        PLLs, test_signals, phase_weight_matrix, connectivity_matrix, index, paused, display_decimation
-    paused, phase_weight_matrix, display_decimation = config_win.update(phase_weight_matrix)
+    global timer, twod, graph_vis, config_win, t, tick, frame_counter, duration, \
+        PLLs, test_signals, connectivity_matrix, paused, display_decimation
+    paused, connectivity_matrix, display_decimation = config_win.update(connectivity_matrix)
     if not paused:
         # Stop the simulation when the duration has completed
         if t >= duration:
@@ -138,7 +127,7 @@ def update():
 
         # Update the test signal and the ppl (iterate simulation)
         for _i in range(0, number_of_PLLs):
-            PLLs[_i].update(t, test_signals[_i].update(t), PLLs, _i, phase_weight_matrix, connectivity_matrix)
+            PLLs[_i].update(t, test_signals[_i].update(t), PLLs, _i, connectivity_matrix)
         # Update internal states for next iteration
         # (done separately from previous call to maintain consistent internal state across all iterations)
         for _i in range(0, number_of_PLLs):
@@ -161,15 +150,8 @@ def update():
                     image_data[row][col] = PLLs[_i].v(PLLs[_i].applied_phase_shift_log[-1])
             img_rotated = np.rot90(image_data, 3)
             twod.update(img_rotated, autoLevels=True)
-            timage_data = np.zeros((threed.width, threed.height, 4))
-            timage_data[:, :, 0] = img_rotated
-            timage_data[:, :, 1] = img_rotated
-            timage_data[:, :, 2] = img_rotated
-            timage_data[:, :, 3] = img_rotated
-            threed.update(z, timage_data, index)
-            index = (index+1) % len(z)
             if render_video:
-                exporter.export('.\Images\img_' + str(frame_counter).zfill(5) + '.png')
+                exporter.export('.\\video\\img_' + str(frame_counter).zfill(5) + '.png')
         # Iterate the time counter according to the sample rate
         t += tick
         # Iterate the display frame counter

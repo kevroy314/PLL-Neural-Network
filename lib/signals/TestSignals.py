@@ -13,7 +13,8 @@ class SineSignal:
         :param _amplitude: the amplitude of the sine wave in volts
         :param _frequency: the frequency of the sine wave in Hz
         :param _phase: the phase of the sine wave in radians
-        :param _noise_level: the absolute noise level of the sine wave
+        :param noise_level: (optional) the absolute noise level of the sine wave (default 0)
+        :param voltage_offset: (optional) the offset of the sine wave voltage (default 0)
         """
         self.frequency = _frequency
         self.two_pi_frequency = 2 * pi * _frequency
@@ -38,6 +39,7 @@ class SineSignal:
         self.signal_log.append(test_sig)
         return test_sig
 
+
 class ComplexSineSignal:
     def __init__(self, _amplitude, _frequency, _phase, noise_level=0, voltage_offset=0):
         """
@@ -46,7 +48,8 @@ class ComplexSineSignal:
         :param _amplitude: the amplitude of the sine wave in volts
         :param _frequency: the frequency of the sine wave in Hz
         :param _phase: the phase of the sine wave in radians
-        :param _noise_level: the absolute noise level of the sine wave
+        :param _noise_level: (optional) the absolute noise level of the sine wave (default 0)
+        :param voltage_offset: (optional) the offset of the sine wave voltage (default 0)
         """
         self.frequency = _frequency
         self.two_pi_frequency = 2 * pi * _frequency

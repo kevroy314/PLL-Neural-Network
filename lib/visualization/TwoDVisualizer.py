@@ -7,6 +7,12 @@ from pylab import *  # For PLL
 
 class TwoDVisualizer:
     def __init__(self, width, height):
+        """
+        Create a 2D visualization for image data.
+
+        :param width: The width of the image to be rendered.
+        :param height: The height of the image to be rendered.
+        """
         self.width = width
         self.height = height
 
@@ -26,4 +32,11 @@ class TwoDVisualizer:
         self.view.addItem(self.img)
 
     def update(self, _d, autoLevels=True):
+        """
+        Update the image visualization with new data and rescale of specified.
+
+        :param _d: The 2D array of image data to be displayed
+        :param autoLevels: (optional) If true, the color levels will dynamically shift relative to the input range on
+                            each call. (default=True)
+        """
         self.img.setImage(_d, autoLevels=autoLevels)

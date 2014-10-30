@@ -1,20 +1,22 @@
 __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
-from scipy import signal
 from pylab import *
+from Filters import *
 
 
-# Class representing the functioning of a Phase-Locked Loop
 class PLL_Complex:
     def __init__(self, _sample_rate, _carrier_frequency, _lowpass_cutoff_frequency, _phase_shift,
                  phase_detector_voltage_gain=1, vco_voltage_gain=1, vco_voltage_offset=0):
         """
         The constructor for a PLL.
 
-        :param _sample_rate: sample rate in Hz
-        :param _carrier_frequency: carrier frequency in Hz
-        :param _lowpass_cutoff_frequency: frequency above which components are removed in Hz
-        :param _phase_shift: phase shift in radians
+        :param phase_detector_voltage_gain: Gain to be applied upon phase detection
+        :param vco_voltage_gain: VCO gain (applied when generating output/feedback signal)
+        :param vco_voltage_offset: VCO offset (applied when generating output/feedback signal)
+        :param _sample_rate: Sample rate in Hz
+        :param _carrier_frequency: Carrier frequency in Hz
+        :param _lowpass_cutoff_frequency: Frequency above which components are removed in Hz
+        :param _phase_shift: Phase shift in radians
         """
         self.sample_rate = _sample_rate
 
@@ -39,52 +41,6 @@ class PLL_Complex:
         self.output_voltage_log = []
 
     @staticmethod
-    def butter_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, order=5):
-        """
-        The lowpass filter used in the simulation.
-
-        :param _data: the data array representing the filter history
-        :param _frequency_cutoff: the frequency cutoff above which all signal components will be filtered
-        :param _carrier_frequency: the frequency of the carrier frequency
-        :param order: the order of the filter
-        :return: a filtered data array containing only low frequency signal components
-        """
-        nyq = 0.5 * _carrier_frequency
-        low = _frequency_cutoff / nyq
-        b, a = signal.butter(order, low, btype='low')
-        return signal.lfilter(b, a, _data)
-
-    @staticmethod
-    def cheby1_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, order):
-        nyq = 0.5 * _carrier_frequency
-        low = _frequency_cutoff / nyq
-        b, a = signal.cheby1(order, 5, low, 'low', analog=False, output='ba')
-        return signal.lfilter(b, a, _data)
-
-    @staticmethod
-    def cheby2_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, order):
-        nyq = 0.5 * _carrier_frequency
-        low = _frequency_cutoff / nyq
-        b, a = signal.cheby2(order, 5, low, 'low', analog=False, output='ba')
-        return signal.lfilter(b, a, _data)
-
-    def lowpass(self, _data, _filter_window_size, _frequency_cutoff, _carrier_frequency, _order, filter_type="cheby2"):
-        if len(_data) == 0:
-            return 0
-        elif len(_data) == 1:
-            return _data[0]
-
-        filter_window = _data[-_filter_window_size:-1]
-        if filter_type == "cheby1":
-            return self.cheby1_lowpass_filter(filter_window, _frequency_cutoff, _carrier_frequency, _order)[-1]
-        elif filter_type == "butter":
-            return self.butter_lowpass_filter(filter_window, _frequency_cutoff, _carrier_frequency, _order)[-1]
-        elif filter_type == "cheby2":
-            return self.cheby2_lowpass_filter(filter_window, _frequency_cutoff, _carrier_frequency, _order)[-1]
-
-        return 0
-
-    @staticmethod
     def v(theta):
         """
         The periodic odd-even function used in updating the simulation.
@@ -94,7 +50,7 @@ class PLL_Complex:
         """
         return sin(theta)
 
-    def update(self, _t, _y, _PLLs, _self_index, _weight_matrix, _connectivity_matrix):
+    def update(self, _t, _y, _PLLs, _self_index, _connectivity_matrix):
         """
         The primary update function for the simulation.
 
@@ -102,7 +58,6 @@ class PLL_Complex:
         :param _y: the input signal voltage in volts
         :param _PLLs: the list of PLLs in the simulation to interact with
         :param _self_index: the index of the PLL being called
-        :param _weight_matrix: the phase weight matrix to use for updating
         :param _connectivity_matrix: the connectivity matrix to use for updating
         :return: the next sample output from the PLL in volts
         """
@@ -115,8 +70,8 @@ class PLL_Complex:
         self.detected_phase_log.append(detected_phase)
 
         # Lowpass Filter
-        filtered_phase = self.lowpass(self.detected_phase_log, self.filter_window_size, self.lowpass_cutoff_frequency,
-                                      self.carrier_frequency, self.filter_order)
+        filtered_phase = lowpass(self.detected_phase_log, self.filter_window_size, self.lowpass_cutoff_frequency,
+                                 self.carrier_frequency, self.filter_order)
 
         # Determine Weighted Phase Adjustment
 
