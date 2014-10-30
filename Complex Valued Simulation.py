@@ -49,19 +49,24 @@ for _file in os.listdir(".\\input\\complex_keys"):
 # Make the connectivity matrix fully connected
 connectivity_matrix = array(np.ones([number_of_PLLs, number_of_PLLs]), dtype=complex)
 
+
 for _i in range(0, number_of_PLLs):
     for _j in range(0, number_of_PLLs):
         _sum = float(0)
         for _k in range(0, len(keys)):
             ki = complex(float(keys[_k][_i][0])/255, float(keys[_k][_i][2])/255)
-            kj = complex(float(keys[_k][_j][0])/255, float(-keys[_k][_j][2])/255)  # conjugate
+            kj = complex(float(keys[_k][_j][0])/255, float(keys[_k][_j][2])/255).conjugate()  # conjugate
             _sum += ki * kj
         connectivity_matrix[_i][_j] = _sum / number_of_PLLs
+        connectivity_matrix[_i][_j] = complex(np.abs(connectivity_matrix[_i][_j].real), np.abs(connectivity_matrix[_i][_j].imag))
 print "Real Part"
 print_padded_matrix(connectivity_matrix.real)
+print "Real Part Transpose"
+print_padded_matrix(np.transpose(connectivity_matrix.real))
 print "Imag Part"
 print_padded_matrix(connectivity_matrix.imag)
-
+print "Imag Part Transpose"
+print_padded_matrix(np.transpose(connectivity_matrix.imag))
 # Validate Weight Matrix Symmetry
 if (np.array(connectivity_matrix).transpose() != np.array(connectivity_matrix)).any():
     print "Error: Phase Offset Matrix Not Symmetric Across Diagonal."

@@ -92,6 +92,8 @@ class PLL_Complex:
         # Voltage Controlled Oscillator
         output_voltage = self.vco_voltage_gain * sin(_t * self.two_pi_carrier_frequency + self.next_phase_shift) + \
                          self.vco_voltage_offset
+        if output_voltage > 1:
+            print output_voltage
         self.output_voltage_log.append(output_voltage)
         self.previous_voltage = output_voltage
 

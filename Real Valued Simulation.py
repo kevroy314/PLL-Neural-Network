@@ -1,14 +1,8 @@
-'''
-TODO:
--Add input sources from image files (bmps)
-'''
-
 __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from pyqtgraph.Qt import QtGui, QtCore  # For GUI
 import pyqtgraph as pg  # For GUI
 from lib.PLLs.PLL import PLL
-from lib.visualization.ThreeDVisualizer import ThreeDVisualizer
 from lib.visualization.TwoDVisualizer import TwoDVisualizer
 from lib.visualization.GraphVisualizer import GraphVisualizer
 from lib.app_modules.ConfigurationWindow import ConfigurationWindow
@@ -21,26 +15,29 @@ Initialize the Simulation
 """
 
 # Renderer Properties
-render_video = False
-enableGraphs = True
+render_video = False  # Save images for each frame of 2D visualizer
+enableGraphs = True  # Show graphs (slows performance) of primary simulation variables
 
 # Simulation Properties
-sample_rate = 10000.0
-carrier_frequency = 2
+sample_rate = 10000.0  # S/s
+carrier_frequency = 2  # Hz
 lowpass_cutoff_frequency = 1  # Must be <= carrier_frequency/2
-number_of_PLLs = 60
-render_width = 6
+number_of_PLLs = 60  # Must be number of pixels in important keys
+render_width = 6  # Must be multiple of # of PLLs
 paused = False
 
-t = 0
-tick = 1 / sample_rate
-PLLs = []
+t = 0  # Simulation time
+tick = 1 / sample_rate  # Simulation tick
+PLLs = []  # Stores PLL Objects
+test_signals = []  # Store input signals
 
 # Test Signal Properties
-noise_level = 0.1
-duration = 10
+noise_level = 0.1  # Deviation from standard sine via random normals
+duration = 10  # Simulation will stop automatically after t>duration
 
-test_signals = []
+"""
+Load Keys from File for Training
+"""
 
 keys = []
 
@@ -65,6 +62,10 @@ if (np.array(connectivity_matrix).transpose() != np.array(connectivity_matrix)).
     print "Error: Phase Offset Matrix Not Symmetric Across Diagonal."
 else:
     print "Array Symmetry Validated."
+
+"""
+Initialize Simulation Objects
+"""
 
 # Create PLLs
 for i in range(0, number_of_PLLs):
