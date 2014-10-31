@@ -94,8 +94,8 @@ pg.setConfigOptions(antialias=True)
 
 config_win = ConfigurationWindow(1)
 
-twod = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width))
-twodimag = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width))
+twod = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width), "Real Phase Image")
+twodimag = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width), "Imaginary Phase Image")
 
 display_decimation = config_win.display_decimation
 frame_counter = 0
@@ -111,7 +111,7 @@ Define Simulation Loop
 def update():
     global timer, twod, config_win, t, tick, frame_counter, duration, \
         PLLs, test_signals, connectivity_matrix, paused, display_decimation
-    paused, connectivity_matrix, display_decimation = config_win.update(connectivity_matrix)
+    paused, connectivity_matrix, display_decimation = config_win.update(connectivity_matrix, frame_counter)
     if not paused:
         # Stop the simulation when the duration has completed
         if t >= duration:
@@ -131,7 +131,7 @@ def update():
             for _i in range(0, number_of_PLLs):
                     row = np.floor(_i / render_width)
                     col = _i % render_width
-                    image_data[row][col] = PLLs[_i].v(PLLs[_i].applied_phase_shift_log[-1])
+                    image_data[row][col] = PLLs[_i].v(PLLs[_i].next_phase_shift)
             img_rotated = np.rot90(image_data, 3)
             twod.update(img_rotated.real, autoLevels=True)
             twodimag.update(img_rotated.imag, autoLevels=True)

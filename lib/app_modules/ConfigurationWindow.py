@@ -14,6 +14,7 @@ class ConfigurationWindow:
                                     (default=10)
         """
         self.display_decimation = _display_decimation
+        self.iteration = 0
         self.paused = False
         self.phase_weight_matrix = 0
         self.loaded_phase_weight_matrix = False
@@ -45,7 +46,9 @@ class ConfigurationWindow:
         self.loadWeightMatrixBtn.clicked.connect(self.load_weight_matrix)
         self.layout.addWidget(self.loadWeightMatrixBtn, 2, 0)
         '''
-
+        self.iterationLabel = QtGui.QLabel("")
+        self.updateIterationText()
+        self.layout.addWidget(self.iterationLabel, 5, 0)
         self.decimationLabel = QtGui.QLabel("Display Decimation, min=0, no maximum.")
         self.decimationSpinBox = pg.SpinBox(value=self.display_decimation, bounds=[1, None], step=1)
         self.layout.addWidget(self.decimationLabel, 6, 0)
@@ -76,6 +79,9 @@ class ConfigurationWindow:
             pickle.dump(self.phase_weight_matrix, file_object)
             print_padded_matrix(self.phase_weight_matrix)
     '''
+    def updateIterationText(self):
+        self.iterationLabel.setText("Iteration #: " + str(self.iteration))
+
     def pause(self):
         """
             Toggle function for changing pause state.
@@ -87,12 +93,18 @@ class ConfigurationWindow:
             display_text = "Continue"
         self.pauseBtn.setText(display_text)
 
-    def update(self, _phase_weight_matrix):
+    def update(self, _phase_weight_matrix, iteration=-1):
         """
 
         :param _phase_weight_matrix: Phase Weight Matrix update for config window
         :return: The current config window parameters (pause, phase weight matrix, display decimation)
         """
+        if iteration == -1:
+            self.iterationLabel.setVisible(False)
+        else:
+            self.iteration = iteration
+            self.updateIterationText()
+
         if not self.loaded_phase_weight_matrix:
             self.phase_weight_matrix = _phase_weight_matrix
         else:

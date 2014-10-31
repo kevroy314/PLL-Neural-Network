@@ -1,6 +1,7 @@
 __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from pylab import *
+from collections import deque
 from Filters import *
 
 
@@ -36,7 +37,13 @@ class PLL_Complex:
 
         self.previous_voltage = 1
 
-        self.detected_phase_log = []
+        self.disable_lowpass = True
+
+        self.disable_logging = True
+        if self.disable_logging:
+            self.detected_phase_log = deque(np.zeros(self.filter_window_size, dtype='f'), self.filter_window_size)
+        else:
+            self.detected_phase_log = []
         self.applied_phase_shift_log = []
         self.output_voltage_log = []
 
@@ -65,13 +72,21 @@ class PLL_Complex:
 
         # Phase Detector
         detected_phase = 0
-        if len(self.output_voltage_log) != 0:
+        if len(self.detected_phase_log) != 0 or self.disable_logging:
             detected_phase = _y * self.previous_voltage * self.phase_detector_voltage_gain
-        self.detected_phase_log.append(detected_phase)
 
-        # Lowpass Filter
-        filtered_phase = lowpass(self.detected_phase_log, self.filter_window_size, self.lowpass_cutoff_frequency,
-                                 self.carrier_frequency, self.filter_order)
+        if self.disable_logging:
+            self.detected_phase_log.append(detected_phase)
+            self.detected_phase_log.popleft()
+        else:
+            self.detected_phase_log.append(detected_phase)
+
+        if not self.disable_lowpass:
+            # Lowpass Filter
+            filtered_phase = lowpass(self.detected_phase_log, self.filter_window_size, self.lowpass_cutoff_frequency,
+                                     self.carrier_frequency, self.filter_order)
+        else:
+            filtered_phase = detected_phase
 
         # Determine Weighted Phase Adjustment
 
@@ -85,16 +100,17 @@ class PLL_Complex:
             self.next_phase_shift = filtered_phase
         else:
             self.next_phase_shift = (self.v(filtered_phase) * phase_aggregator)
-        self.applied_phase_shift_log.append(self.next_phase_shift)
+        if not self.disable_logging:
+            self.applied_phase_shift_log.append(self.next_phase_shift)
 
         # TODO DEBUG VCO OVERFLOW IN SIN
 
         # Voltage Controlled Oscillator
-        output_voltage = self.vco_voltage_gain * sin(_t * self.two_pi_carrier_frequency + self.next_phase_shift) + \
+        output_voltage = self.vco_voltage_gain * sin(_t * self.two_pi_carrier_frequency + np.abs(self.next_phase_shift)) + \
                          self.vco_voltage_offset
-        if output_voltage > 1:
-            print output_voltage
-        self.output_voltage_log.append(output_voltage)
+
+        if not self.disable_logging:
+            self.output_voltage_log.append(output_voltage)
         self.previous_voltage = output_voltage
 
         # END PLL block

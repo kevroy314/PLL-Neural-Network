@@ -6,7 +6,7 @@ from pylab import *  # For PLL
 
 
 class TwoDVisualizer:
-    def __init__(self, width, height):
+    def __init__(self, width, height, windowTitle="Phase Image"):
         """
         Create a 2D visualization for image data.
 
@@ -16,9 +16,9 @@ class TwoDVisualizer:
         self.width = width
         self.height = height
 
-        self.win = pg.GraphicsWindow(title="PLL Example Animated")
+        self.win = pg.GraphicsWindow(title=windowTitle)
         self.win.resize(300, 300)
-        self.win.setWindowTitle('PLL Example Phase Image')
+        self.win.setWindowTitle(windowTitle)
 
         self.img = pg.ImageItem(autoLevels=False, levels=(-0.1, 0.1))
         self.gradientWidget = pg.GradientWidget()
