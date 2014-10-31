@@ -9,6 +9,7 @@ from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.opengl as gl
 import pyqtgraph as pg
 import numpy as np
+from lib.visualization.LinePlotVisualizer import LinePlotVisualizer
 
 app = QtGui.QApplication([])
 w = gl.GLViewWidget()
@@ -45,20 +46,36 @@ w.addItem(plt)
 
 timer = QtCore.QTimer()
 
+# Test Object
+lpv = LinePlotVisualizer(3, "Test Window")
+xa = [[], [], []]
+ya = [[], [], []]
+za = [[], [], []]
 
 def update():
-    global i, pts, plt, x, y, z, timer
+    global i, pts, plt, x, y, z, timer, xa, ya, za, lpv
     x.append(np.sin(i))
     y.append(np.cos(i))
     z.append(np.sin(i)*i/end_i)
     pts = np.vstack([x, y, z]).transpose()
     plt.setData(pos=pts)
+
+    for j in range(lpv.numLines):
+        xa[j].append(np.sin(i)+1.1*j)
+        ya[j].append(np.cos(i))
+        za[j].append(np.sin(i)*i/end_i)
+
+    lpv.update(xa, ya, za)
+
     i += 0.1
     if i >= end_i:
         timer.stop()
 
 timer.timeout.connect(update)
-timer.start(0)
+timer.start(10)
+
+
+
 
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':

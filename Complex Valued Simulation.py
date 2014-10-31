@@ -10,6 +10,7 @@ import pyqtgraph as pg  # For GUI
 from PIL import Image
 from lib.PLLs.PLL_Complex import PLL_Complex
 from lib.visualization.TwoDVisualizer import TwoDVisualizer
+from lib.visualization.LinePlotVisualizer import LinePlotVisualizer
 from lib.app_modules.ConfigurationWindow import ConfigurationWindow
 from lib.app_modules.HelperFunctions import *
 from lib.signals.TestSignals import ComplexSineSignal
@@ -96,6 +97,14 @@ config_win = ConfigurationWindow(1)
 
 twod = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width), "Real Phase Image")
 twodimag = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width), "Imaginary Phase Image")
+phaseplot = LinePlotVisualizer(3, "Phase Plot", 1)
+phasexa = []
+phaseya = []
+phaseza = []
+for i in range(phaseplot.numLines):
+    phasexa.append([])
+    phaseya.append([])
+    phaseza.append([])
 
 display_decimation = config_win.display_decimation
 frame_counter = 0
@@ -110,7 +119,8 @@ Define Simulation Loop
 
 def update():
     global timer, twod, config_win, t, tick, frame_counter, duration, \
-        PLLs, test_signals, connectivity_matrix, paused, display_decimation
+        PLLs, test_signals, connectivity_matrix, paused, display_decimation, \
+        phaseplot, phasexa, phaseya, phaseza
     paused, connectivity_matrix, display_decimation = config_win.update(connectivity_matrix, frame_counter)
     if not paused:
         # Stop the simulation when the duration has completed
@@ -127,6 +137,12 @@ def update():
 
         # Graph the PLL states according to the display decimation
         if frame_counter % display_decimation == 0:
+            for _i in range(phaseplot.numLines):
+                phasexa[_i].append(PLLs[_i].v(PLLs[_i].next_phase_shift).imag)
+                phaseya[_i].append(PLLs[_i].previous_voltage.imag)
+                phaseza[_i].append(0)
+            phaseplot.update(phasexa,phaseya,phaseza)
+
             image_data = array(np.zeros((number_of_PLLs/render_width, render_width)), dtype=complex)
             for _i in range(0, number_of_PLLs):
                     row = np.floor(_i / render_width)
@@ -153,6 +169,8 @@ def update():
                 imagexporter.parameters()['height'] = int(number_of_PLLs/render_width)  # (note this also affects height parameter)
                 realexporter.export('.\\video\\real\\img_' + str(frame_counter).zfill(5) + '.png')
                 imagexporter.export('.\\video\\imaginary\\img_' + str(frame_counter).zfill(5) + '.png')
+
+
         # Iterate the time counter according to the sample rate
         t += tick
         # Iterate the display frame counter
