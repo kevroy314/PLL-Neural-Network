@@ -65,7 +65,7 @@ def lowpass(_data, _filter_window_size, _frequency_cutoff, _carrier_frequency, _
     elif len(_data) == 1:
         return _data[0]
 
-    filter_window = _data[-_filter_window_size:-1]
+    filter_window = _data
     if filter_type == "cheby1":
         return cheby1_lowpass_filter(filter_window, _frequency_cutoff, _carrier_frequency, _order)[-1]
     elif filter_type == "butter":

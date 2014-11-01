@@ -6,13 +6,16 @@ import numpy as np
 
 
 class LinePlotVisualizer:
-    def __init__(self, numLines=1, windowTitle="Line Plot", distance=40):
+    def __init__(self, numLines, windowTitle="Line Plot", distance=40, elevation=90, fov=60, azimuth=0):
         self.numLines = numLines
         self.windowTitle = windowTitle
 
         # Create Window
         self.win = gl.GLViewWidget()
         self.win.opts['distance'] = distance
+        self.win.opts['elevation'] = elevation
+        self.win.opts['fov'] = fov
+        self.win.opts['azimuth'] = azimuth
         self.win.show()
         self.win.setWindowTitle(self.windowTitle)
 

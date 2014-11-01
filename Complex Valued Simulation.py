@@ -25,10 +25,11 @@ render_video = False
 
 # Simulation Properties
 sample_rate = 10000.0
-carrier_frequency = 2
-lowpass_cutoff_frequency = 1  # Must be <= carrier_frequency/2
-number_of_PLLs = 60
-render_width = 6
+carrier_frequency = 10  # Decomposes (higher=more decomposition/jaggedness, lower=smoother relative to sample rate)
+lowpass_cutoff_frequency = 0.001  # Must be <= carrier_frequency/2, effects loose/tight/noise
+                                  # low=less noise and tighter, high=more noise/looser
+number_of_PLLs = 5
+render_width = 5
 paused = False
 
 t = 0
@@ -36,12 +37,12 @@ tick = 1 / sample_rate
 PLLs = []
 
 # Test Signal Properties
-noise_level = 0.1
+noise_level = 0.2
 duration = 10
 
 test_signals = []
 
-keys = []
+keys = []  # Adding keys means you need to calibrate the filter to work with the keys
 
 for _file in os.listdir(".\\input\\complex_keys"):
     if _file.endswith(".bmp"):
@@ -97,7 +98,7 @@ config_win = ConfigurationWindow(1)
 
 twod = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width), "Real Phase Image")
 twodimag = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width), "Imaginary Phase Image")
-phaseplot = LinePlotVisualizer(3, "Phase Plot", 1)
+phaseplot = LinePlotVisualizer(number_of_PLLs, windowTitle="Phase Plot", distance=4.7625370521)
 phasexa = []
 phaseya = []
 phaseza = []
@@ -138,10 +139,10 @@ def update():
         # Graph the PLL states according to the display decimation
         if frame_counter % display_decimation == 0:
             for _i in range(phaseplot.numLines):
-                phasexa[_i].append(PLLs[_i].v(PLLs[_i].next_phase_shift).imag)
-                phaseya[_i].append(PLLs[_i].previous_voltage.imag)
+                phasexa[_i].append(PLLs[_i].v(PLLs[_i].next_phase_shift).real)
+                phaseya[_i].append(PLLs[_i].previous_voltage.real)
                 phaseza[_i].append(0)
-            phaseplot.update(phasexa,phaseya,phaseza)
+            phaseplot.update(phasexa, phaseya, phaseza)
 
             image_data = array(np.zeros((number_of_PLLs/render_width, render_width)), dtype=complex)
             for _i in range(0, number_of_PLLs):
