@@ -32,9 +32,9 @@ class PLL_Complex:
         self.vco_voltage_gain = vco_voltage_gain
 
         self.lowpass_cutoff_frequency = _lowpass_cutoff_frequency
-        self.filter_order = 5  # Smoother Curvature
+        self.filter_order = 3  # Smoother Curvature
                                # (low=jagged, high=smooth: little to no effect on noise level compared to window size)
-        self.filter_window_size = 200  # Tighter Cruve
+        self.filter_window_size = 100  # Tighter Cruve
                                         # (low=tight, high=loose) with order 2, 3 window size is enough to smooth noise)
 
         self.previous_voltage = 1

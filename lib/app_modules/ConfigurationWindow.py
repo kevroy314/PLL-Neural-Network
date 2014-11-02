@@ -6,7 +6,7 @@ import pyqtgraph as pg  # For GUI
 
 
 class ConfigurationWindow:
-    def __init__(self, _display_decimation=10):
+    def __init__(self, _display_decimation=10, pause=False):
         """
         Create a ConfigurationWindow for storing/modifying simulation properties.
 
@@ -15,7 +15,7 @@ class ConfigurationWindow:
         """
         self.display_decimation = _display_decimation
         self.iteration = 0
-        self.paused = False
+        self.paused = pause
         self.phase_weight_matrix = 0
         self.loaded_phase_weight_matrix = False
 
@@ -30,7 +30,10 @@ class ConfigurationWindow:
         self.cw.setLayout(self.layout)
         self.layout.setSpacing(0)
 
-        self.pauseBtn = QtGui.QPushButton("Pause", self.win)
+        display_text = "Pause"
+        if pause:
+            display_text = "Start"
+        self.pauseBtn = QtGui.QPushButton(display_text, self.win)
 
         self.pauseBtn.clicked.connect(self.pause)
         self.layout.addWidget(self.pauseBtn, 0, 0)

@@ -14,6 +14,7 @@ from lib.visualization.LinePlotVisualizer import LinePlotVisualizer
 from lib.app_modules.ConfigurationWindow import ConfigurationWindow
 from lib.app_modules.HelperFunctions import *
 from lib.signals.TestSignals import ComplexSineSignal
+from lib.signals.FileSignal import FileSignal
 import os
 
 """
@@ -24,20 +25,20 @@ Initialize the Simulation
 render_video = False
 
 # Simulation Properties
-sample_rate = 10000.0
-carrier_frequency = 10  # Decomposes (higher=more decomposition/jaggedness, lower=smoother relative to sample rate)
+sample_rate = 400.0
+carrier_frequency = 1  # Decomposes (higher=more decomposition/jaggedness, lower=smoother relative to sample rate)
 lowpass_cutoff_frequency = 0.001  # Must be <= carrier_frequency/2, effects loose/tight/noise
                                   # low=less noise and tighter, high=more noise/looser
-number_of_PLLs = 5
-render_width = 5
-paused = False
+number_of_PLLs = 16
+render_width = 4
+paused = True
 
 t = 0
 tick = 1 / sample_rate
 PLLs = []
 
 # Test Signal Properties
-noise_level = 0.2
+noise_level = 0.0
 duration = 10
 
 test_signals = []
@@ -79,11 +80,15 @@ else:
 for i in range(0, number_of_PLLs):
     PLLs.append(PLL_Complex(sample_rate, carrier_frequency, lowpass_cutoff_frequency, 1.57079))
 
-input_signals = np.zeros(number_of_PLLs)
+for _file in os.listdir(".\\input\\in_signals_complex"):
+    if _file.endswith(".bmp"):
+        input_signals = get_rgb_image_data_from_file(".\\input\\in_signals_complex\\"+_file)
+        break
 
 # Create Test Signals
 for i in range(0, number_of_PLLs):
-    test_signals.append(ComplexSineSignal(1, carrier_frequency, input_signals[i], noise_level=noise_level))
+    #test_signals.append(ComplexSineSignal(1, carrier_frequency, input_signals[i][0], noise_level=noise_level))
+    test_signals.append(FileSignal('.\\input\\in_csv\\iterictal.csv', sample_rate, _rownum=i))
 
 
 """
@@ -94,7 +99,7 @@ Initialize the GUI
 app = QtGui.QApplication([])
 pg.setConfigOptions(antialias=True)
 
-config_win = ConfigurationWindow(1)
+config_win = ConfigurationWindow(1, pause)
 
 twod = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width), "Real Phase Image")
 twodimag = TwoDVisualizer(int(render_width), int(number_of_PLLs/render_width), "Imaginary Phase Image")
@@ -139,6 +144,7 @@ def update():
         # Graph the PLL states according to the display decimation
         if frame_counter % display_decimation == 0:
             for _i in range(phaseplot.numLines):
+                #if _i == 4:
                 phasexa[_i].append(PLLs[_i].v(PLLs[_i].next_phase_shift).real)
                 phaseya[_i].append(PLLs[_i].previous_voltage.real)
                 phaseza[_i].append(0)
