@@ -42,3 +42,50 @@ def get_rgb_image_data_from_file(filename):
     #_bin_img = _img.convert("P")
     _data = list(_img.getdata())
     return np.array(_data)
+
+
+class LineIntegral:
+    def __init__(self, _numElements):
+        """
+        Initialize a line integral calculator.
+
+        :param _numElements: The number of elements being integrated independently
+        """
+        self.numElements = _numElements
+        self.lengths = np.zeros((self.numElements, 1)).tolist()
+        self.data = np.zeros((self.numElements, 1)).tolist()
+
+    def update(self, _d):
+        """
+        Update the line integral with new points
+
+        :param _d: List of new points of length specified in constructor. If different length, function does nothing.
+        :return: Nothing
+        """
+        if len(self.data) != len(_d):
+            return
+        for i in range(len(self.data)):
+            self.data[i].append(_d[i])
+            # TODO Compute length
+
+    def getAverage(self):
+        """
+        Get the average line length across iterations.
+
+        :return:
+        """
+        output = []
+        for i in range(len(self.lengths)):
+            output.append(np.average(self.lengths[i]))
+        return output
+
+    def getTotal(self):
+        """
+
+
+        :return:
+        """
+        output = []
+        for i in range(len(self.sums)):
+            output.append(np.sum(self.sums[i]))
+        return output
