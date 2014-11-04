@@ -49,7 +49,7 @@ class LineIntegral:
         """
         Initialize a line integral calculator.
 
-        :param _numElements: The number of elements being integrated independently
+        :param _numElements: The number of channels being integrated independently
         """
         self.numElements = _numElements
         self.lengths = np.zeros((self.numElements, 1)).tolist()
@@ -59,20 +59,25 @@ class LineIntegral:
         """
         Update the line integral with new points
 
-        :param _d: List of new points of length specified in constructor. If different length, function does nothing.
+        :param _d: List (channels) of new points (tuples) of length specified in constructor.
+                   If different length, function does nothing.
         :return: Nothing
         """
         if len(self.data) != len(_d):
             return
         for i in range(len(self.data)):
             self.data[i].append(_d[i])
-            # TODO Compute length
+            a = self.data[i][-1]
+            b = self.data[i][-2]
+            s = np.subtract(a, b)
+            r = np.linalg.norm(s)
+            self.lengths[i].append(r)
 
     def getAverage(self):
         """
         Get the average line length across iterations.
 
-        :return:
+        :return: The average length for each channel.
         """
         output = []
         for i in range(len(self.lengths)):
@@ -81,11 +86,11 @@ class LineIntegral:
 
     def getTotal(self):
         """
+        Get the total length of each channel line.
 
-
-        :return:
+        :return: The total length for each channel.
         """
         output = []
-        for i in range(len(self.sums)):
-            output.append(np.sum(self.sums[i]))
+        for i in range(len(self.lengths)):
+            output.append(np.sum(self.lengths[i]))
         return output
