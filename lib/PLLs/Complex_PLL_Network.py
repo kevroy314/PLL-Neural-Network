@@ -1,6 +1,5 @@
 __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
-from lib.signals.TestSignals import ComplexSineSignal
 from lib.app_modules.HelperFunctions import *
 from lib.signals.FileSignal import FileSignal
 from lib.PLLs.PLL_Complex import PLL_Complex
@@ -8,13 +7,19 @@ import os
 
 
 class Complex_PLL_Network:
-    def __init__(self, number_of_PLLs, sample_rate, carrier_frequency, lowpass_cutoff_frequency):
+    def __init__(self, number_of_PLLs, sample_rate, carrier_frequency, lowpass_cutoff_frequency,
+                 keys_dir=".\\input\\complex_keys\\", in_signal_dir=".\\input\\in_signals_complex\\",
+                 in_signal_filename=".\\input\\in_csv\\ictal.csv"):
         # Simulation Properties
         self.sample_rate = sample_rate
         self.carrier_frequency = carrier_frequency  # Decomposes (higher=more decomposition/jaggedness, lower=smoother relative to sample rate)
         self.lowpass_cutoff_frequency = lowpass_cutoff_frequency  # Must be <= carrier_frequency/2, effects loose/tight/noise
                                           # low=less noise and tighter, high=more noise/looser
         self.number_of_PLLs = number_of_PLLs
+
+        self.keys_dir = keys_dir
+        self.in_signal_dir = in_signal_dir
+        self.in_signal_filename = in_signal_filename
 
         self.t = 0
         self.tick = 1 / self.sample_rate
@@ -24,13 +29,12 @@ class Complex_PLL_Network:
 
         keys = []  # Adding keys means you need to calibrate the filter to work with the keys
 
-        for _file in os.listdir(".\\input\\complex_keys"):
+        for _file in os.listdir(self.keys_dir):
             if _file.endswith(".bmp"):
-                keys.append(get_rgb_image_data_from_file(".\\input\\complex_keys\\"+_file))
+                keys.append(get_rgb_image_data_from_file(self.keys_dir+_file))
 
         # Make the connectivity matrix fully connected
         self.connectivity_matrix = array(np.ones([self.number_of_PLLs, self.number_of_PLLs]), dtype=complex)
-
 
         for _i in range(0, self.number_of_PLLs):
             for _j in range(0, self.number_of_PLLs):
@@ -41,14 +45,16 @@ class Complex_PLL_Network:
                     _sum += ki * kj
                 self.connectivity_matrix[_i][_j] = _sum / self.number_of_PLLs
                 self.connectivity_matrix[_i][_j] = complex(np.abs(self.connectivity_matrix[_i][_j].real), np.abs(self.connectivity_matrix[_i][_j].imag))
-        print "Real Part"
-        print_padded_matrix(self.connectivity_matrix.real)
-        print "Real Part Transpose"
-        print_padded_matrix(np.transpose(self.connectivity_matrix.real))
-        print "Imag Part"
-        print_padded_matrix(self.connectivity_matrix.imag)
-        print "Imag Part Transpose"
-        print_padded_matrix(np.transpose(self.connectivity_matrix.imag))
+
+        #print "Real Part"
+        #print_padded_matrix(self.connectivity_matrix.real)
+        #print "Real Part Transpose"
+        #print_padded_matrix(np.transpose(self.connectivity_matrix.real))
+        #print "Imag Part"
+        #print_padded_matrix(self.connectivity_matrix.imag)
+        #print "Imag Part Transpose"
+        #print_padded_matrix(np.transpose(self.connectivity_matrix.imag))
+
         # Validate Weight Matrix Symmetry
         if (np.array(self.connectivity_matrix).transpose() != np.array(self.connectivity_matrix)).any():
             print "Error: Phase Offset Matrix Not Symmetric Across Diagonal."
@@ -59,15 +65,15 @@ class Complex_PLL_Network:
         for i in range(0, self.number_of_PLLs):
             self.PLLs.append(PLL_Complex(self.sample_rate, self.carrier_frequency, self.lowpass_cutoff_frequency, 1.57079))
 
-        for _file in os.listdir(".\\input\\in_signals_complex"):
+        for _file in os.listdir(self.in_signal_dir):
             if _file.endswith(".bmp"):
-                self.input_signals = get_rgb_image_data_from_file(".\\input\\in_signals_complex\\"+_file)
+                self.input_signals = get_rgb_image_data_from_file(self.in_signal_dir+_file)
                 break
 
         # Create Test Signals
         for i in range(0, self.number_of_PLLs):
             #test_signals.append(ComplexSineSignal(1, carrier_frequency, input_signals[i][0], noise_level=noise_level))
-            self.test_signals.append(FileSignal('.\\input\\in_csv\\interictal.csv', self.sample_rate, _rownum=i))
+            self.test_signals.append(FileSignal(self.in_signal_filename, self.sample_rate, _rownum=i))
 
     def update(self):
                 # Update the test signal and the ppl (iterate simulation)

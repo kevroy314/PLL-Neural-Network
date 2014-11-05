@@ -32,8 +32,8 @@ config_win = ConfigurationWindow(1, pause)
 
 render_width = 4
 
-twod = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs/render_width), "Real Phase Image")
-twodimag = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs/render_width), "Imaginary Phase Image")
+twod = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs / render_width), "Real Phase Image")
+twodimag = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs / render_width), "Imaginary Phase Image")
 phaseplot = LinePlotVisualizer(sim.number_of_PLLs, windowTitle="Phase Plot", distance=4.7625370521)
 phasexa = []
 phaseya = []
@@ -58,7 +58,7 @@ Define Simulation Loop
 
 def update():
     global timer, twod, config_win, frame_counter, duration, paused, display_decimation, \
-           phaseplot, phasexa, phaseya, phaseza, lnint
+        phaseplot, phasexa, phaseya, phaseza, lnint
     paused, connectivity_matrix, display_decimation = config_win.update(sim.connectivity_matrix, frame_counter)
     if not paused:
         # Stop the simulation when the duration has completed
@@ -81,17 +81,17 @@ def update():
                 print lnint.getTotal()
             phaseplot.update(phasexa, phaseya, phaseza)
 
-            image_data = array(np.zeros((sim.number_of_PLLs/render_width, render_width)), dtype=complex)
+            image_data = array(np.zeros((sim.number_of_PLLs / render_width, render_width)), dtype=complex)
             for _i in range(0, sim.number_of_PLLs):
-                    row = np.floor(_i / render_width)
-                    col = _i % render_width
-                    image_data[row][col] = sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift)
+                row = np.floor(_i / render_width)
+                col = _i % render_width
+                image_data[row][col] = sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift)
             img_rotated = np.rot90(image_data, 3)
             twod.update(img_rotated.real, autoLevels=True)
             twodimag.update(img_rotated.imag, autoLevels=True)
             if render_video:
                 # r, g, and b are 512x512 float arrays with values >= 0 and < 1.
-                rgbArray = np.zeros((sim.number_of_PLLs/render_width, render_width, 3), 'uint8')
+                rgbArray = np.zeros((sim.number_of_PLLs / render_width, render_width, 3), 'uint8')
                 rgbArray[..., 0] = image_data.real * 255
                 rgbArray[..., 1] = 0
                 rgbArray[..., 2] = image_data.imag * 255
@@ -102,9 +102,11 @@ def update():
 
                 # set export parameters if needed
                 realexporter.parameters()['width'] = int(render_width)  # (note this also affects height parameter)
-                realexporter.parameters()['height'] = int(sim.number_of_PLLs/render_width)  # (note this also affects height parameter)
+                realexporter.parameters()['height'] = int(
+                    sim.number_of_PLLs / render_width)  # (note this also affects height parameter)
                 imagexporter.parameters()['width'] = int(render_width)  # (note this also affects height parameter)
-                imagexporter.parameters()['height'] = int(sim.number_of_PLLs/render_width)  # (note this also affects height parameter)
+                imagexporter.parameters()['height'] = int(
+                    sim.number_of_PLLs / render_width)  # (note this also affects height parameter)
                 realexporter.export('.\\video\\real\\img_' + str(frame_counter).zfill(5) + '.png')
                 imagexporter.export('.\\video\\imaginary\\img_' + str(frame_counter).zfill(5) + '.png')
 

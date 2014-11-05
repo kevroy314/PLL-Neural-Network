@@ -21,7 +21,6 @@ class FileSignal:
                 for row in reader:
                     if i == _rownum:
                         self.data = np.array(row).astype(float).tolist()
-                        print row
                         break
                     i += 1
         else:
