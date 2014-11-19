@@ -15,7 +15,9 @@ Initialize the Simulation
 
 paused = True
 duration = 10
-sim = Complex_PLL_Network(number_of_PLLs=16, sample_rate=400.0, carrier_frequency=1.0, lowpass_cutoff_frequency=0.001)
+sim = Complex_PLL_Network(number_of_PLLs=5, sample_rate=400.0,
+                          carrier_frequency=1.0, lowpass_cutoff_frequency=0.001,
+                          filter_order=3, filter_window_size=100)
 
 """
 Initialize the GUI
@@ -30,7 +32,7 @@ pg.setConfigOptions(antialias=True)
 
 config_win = ConfigurationWindow(1, pause)
 
-render_width = 4
+render_width = 1
 
 twod = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs / render_width), "Real Phase Image")
 twodimag = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs / render_width), "Imaginary Phase Image")
