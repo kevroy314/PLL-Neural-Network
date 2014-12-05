@@ -7,6 +7,7 @@ from Filters import *
 
 class PLL_Complex:
     def __init__(self, _sample_rate, _carrier_frequency, _lowpass_cutoff_frequency, _phase_shift,
+                 filter_order=3, filter_window_size=100,
                  phase_detector_voltage_gain=1, vco_voltage_gain=1, vco_voltage_offset=0):
         """
         The constructor for a PLL.
@@ -32,9 +33,9 @@ class PLL_Complex:
         self.vco_voltage_gain = vco_voltage_gain
 
         self.lowpass_cutoff_frequency = _lowpass_cutoff_frequency
-        self.filter_order = 3  # Smoother Curvature
+        self.filter_order = filter_order  # Smoother Curvature
                                # (low=jagged, high=smooth: little to no effect on noise level compared to window size)
-        self.filter_window_size = 100  # Tighter Cruve
+        self.filter_window_size = filter_window_size  # Tighter Cruve
                                         # (low=tight, high=loose) with order 2, 3 window size is enough to smooth noise)
 
         self.previous_voltage = 1

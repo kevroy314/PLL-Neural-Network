@@ -2,19 +2,23 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from lib.app_modules.HelperFunctions import *
 from lib.signals.FileSignal import FileSignal
+from lib.signals.TestSignals import ComplexSineSignal
 from lib.PLLs.PLL_Complex import PLL_Complex
 import os
 
 
 class Complex_PLL_Network:
     def __init__(self, number_of_PLLs, sample_rate, carrier_frequency, lowpass_cutoff_frequency,
+                 filter_order=3, filter_window_size=100,
                  keys_dir=".\\input\\complex_keys\\", in_signal_dir=".\\input\\in_signals_complex\\",
-                 in_signal_filename=".\\input\\in_csv\\ictal.csv"):
+                 in_signal_filename=""):
         # Simulation Properties
         self.sample_rate = sample_rate
         self.carrier_frequency = carrier_frequency  # Decomposes (higher=more decomposition/jaggedness, lower=smoother relative to sample rate)
         self.lowpass_cutoff_frequency = lowpass_cutoff_frequency  # Must be <= carrier_frequency/2, effects loose/tight/noise
                                           # low=less noise and tighter, high=more noise/looser
+        self.filter_order = filter_order
+        self.filter_window_size = filter_window_size
         self.number_of_PLLs = number_of_PLLs
 
         self.keys_dir = keys_dir
@@ -24,6 +28,8 @@ class Complex_PLL_Network:
         self.t = 0
         self.tick = 1 / self.sample_rate
         self.PLLs = []
+
+        self.noise_level = 0
 
         self.test_signals = []
 
@@ -63,7 +69,8 @@ class Complex_PLL_Network:
 
         # Create PLLs
         for i in range(0, self.number_of_PLLs):
-            self.PLLs.append(PLL_Complex(self.sample_rate, self.carrier_frequency, self.lowpass_cutoff_frequency, 1.57079))
+            self.PLLs.append(PLL_Complex(self.sample_rate, self.carrier_frequency, self.lowpass_cutoff_frequency, 1.57079,
+                                         filter_order=self.filter_order, filter_window_size=self.filter_window_size))
 
         for _file in os.listdir(self.in_signal_dir):
             if _file.endswith(".bmp"):
@@ -72,8 +79,10 @@ class Complex_PLL_Network:
 
         # Create Test Signals
         for i in range(0, self.number_of_PLLs):
-            #test_signals.append(ComplexSineSignal(1, carrier_frequency, input_signals[i][0], noise_level=noise_level))
-            self.test_signals.append(FileSignal(self.in_signal_filename, self.sample_rate, _rownum=i))
+            if in_signal_filename == "":
+                self.test_signals.append(ComplexSineSignal(1, carrier_frequency, self.input_signals[i][0], noise_level=self.noise_level))
+            else:
+                self.test_signals.append(FileSignal(self.in_signal_filename, self.sample_rate, _rownum=i))
 
     def update(self):
                 # Update the test signal and the ppl (iterate simulation)

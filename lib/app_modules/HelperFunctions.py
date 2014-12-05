@@ -2,6 +2,7 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 import PIL
 from pylab import *  # For PLL
+import lib.app_modules.pyeeg as pyeeg
 
 
 def print_padded_matrix(in_matrix):
@@ -73,17 +74,6 @@ class LineIntegral:
             r = np.linalg.norm(s)
             self.lengths[i].append(r)
 
-    def getAverage(self):
-        """
-        Get the average line length across iterations.
-
-        :return: The average length for each channel.
-        """
-        output = []
-        for i in range(len(self.lengths)):
-            output.append(np.average(self.lengths[i]))
-        return output
-
     def getTotal(self):
         """
         Get the total length of each channel line.
@@ -93,4 +83,51 @@ class LineIntegral:
         output = []
         for i in range(len(self.lengths)):
             output.append(np.sum(self.lengths[i]))
+        return output
+
+    '''    def getAverage(self):
+        """
+        Get the average line length across iterations.
+
+        :return: The average length for each channel.
+        """
+        output = []
+        for i in range(len(self.lengths)):
+            output.append(np.average(self.lengths[i]))
+        return output
+    '''
+
+
+class ApproximateEntropy:
+    def __init__(self, _numElements):
+        """
+        Initialize an approximate entropy calculator.
+
+        :param _numElements: The number of channels being measured independently
+        """
+        self.numElements = _numElements
+        self.data = np.zeros((self.numElements, 1)).tolist()
+
+    def update(self, _d):
+        """
+        Update the entropy measure with new points
+
+        :param _d: List (channels) of new points (tuples) of length specified in constructor.
+                   If different length, function does nothing.
+        :return: Nothing
+        """
+        if len(self.data) != len(_d):
+            return
+        for i in range(len(self.data)):
+            self.data[i].append(_d[i])
+
+    def getTotal(self):
+        """
+        Get the total approximate entropy of each channel.
+
+        :return: The total length for each channel.
+        """
+        output = []
+        for i in range(len(self.numElements)):
+            output.append(pyeeg.ap_entropy(self.data[i],))
         return output

@@ -12,7 +12,7 @@ import time
 show_ui = False
 
 # Populate list of csv files in directory
-input_dir = ".\\input\\dog1\\ictal\\"
+input_dir = ".\\input\\calibration_set\\"
 
 input_files = []
 
@@ -21,7 +21,7 @@ for _file in os.listdir(input_dir):
         input_files.append(_file)
 
 # Create output file
-results_file = open('results.dat', 'w')
+results_file = open('.\\results\\calibration_set_combined_128128_key.csv', 'w')
 
 # Set up application window
 if show_ui:
@@ -31,7 +31,6 @@ if show_ui:
 for i in range(len(input_files)):
     print datetime.datetime.now().isoformat() + \
           ": Starting Iteration " + str(i) + ", Filename=\"" + input_files[i] + "\""
-
     """
     Initialize the Simulation
     """
@@ -40,8 +39,12 @@ for i in range(len(input_files)):
     done = False
     begin_integration_time = 2
     duration = 4
+    # Default Calibration: number_of_PLLs=16, sample_rate=400.0,
+    # carrier_frequency=1.0, lowpass_cutoff_frequency=0.001,
+    # filter_order=3, filter_window_size=100,
     sim = Complex_PLL_Network(number_of_PLLs=16, sample_rate=400.0,
                               carrier_frequency=1.0, lowpass_cutoff_frequency=0.001,
+                              filter_order=3, filter_window_size=100,
                               in_signal_filename=input_dir+input_files[i])
 
     lnint = LineIntegral(sim.number_of_PLLs)
@@ -75,7 +78,6 @@ for i in range(len(input_files)):
     def update():
         global timer, config_win, frame_counter, duration, paused, display_decimation, \
             phaseplot, phasexa, phaseya, phaseza, lnint, show_ui, done
-
         if show_ui:
             paused, connectivity_matrix, display_decimation = config_win.update(sim.connectivity_matrix, frame_counter)
         if not paused:
@@ -106,7 +108,7 @@ for i in range(len(input_files)):
             # Graph the PLL states according to the display decimation
             if show_ui:
                 if frame_counter % display_decimation == 0:
-                    for _i in range(sim.number_of_PLLs):
+                    for _i in range(phaseplot.numLines):
                         tpl = (sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift).real, sim.PLLs[_i].previous_voltage.real, 0)
                         phasexa[_i].append(tpl[0])
                         phaseya[_i].append(tpl[1])
