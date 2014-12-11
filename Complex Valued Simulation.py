@@ -5,6 +5,7 @@ import pyqtgraph as pg  # For GUI
 from PIL import Image
 from lib.visualization.TwoDVisualizer import TwoDVisualizer
 from lib.visualization.LinePlotVisualizer import LinePlotVisualizer
+from lib.visualization.GraphVisualizer import GraphVisualizer
 from lib.app_modules.ConfigurationWindow import ConfigurationWindow
 from lib.app_modules.HelperFunctions import *
 from lib.PLLs.Complex_PLL_Network import Complex_PLL_Network
@@ -12,12 +13,16 @@ from lib.PLLs.Complex_PLL_Network import Complex_PLL_Network
 """
 Initialize the Simulation
 """
+input_dir = r"C:\Users\Kevin\Desktop\random_interictal_dog2" + '\\'
+input_file = "Dog_2_interictal_segment_1100.csv"
 
 paused = True
-duration = 10
-sim = Complex_PLL_Network(number_of_PLLs=5, sample_rate=400.0,
+duration = 4
+begin_integration_time = 2
+sim = Complex_PLL_Network(number_of_PLLs=16, sample_rate=400.0,
                           carrier_frequency=1.0, lowpass_cutoff_frequency=0.001,
-                          filter_order=3, filter_window_size=100)
+                          filter_order=3, filter_window_size=100,
+                          in_signal_filename=input_dir+input_file)
 
 """
 Initialize the GUI
@@ -34,6 +39,8 @@ config_win = ConfigurationWindow(1, pause)
 
 render_width = 1
 
+graph = GraphVisualizer(1, [(255, 255, 255)], ["PLL 0"])
+data = []
 twod = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs / render_width), "Real Phase Image")
 twodimag = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs / render_width), "Imaginary Phase Image")
 phaseplot = LinePlotVisualizer(sim.number_of_PLLs, windowTitle="Phase Plot", distance=4.7625370521)
@@ -46,6 +53,7 @@ for i in range(phaseplot.numLines):
     phaseza.append([])
 
 lnint = LineIntegral(sim.number_of_PLLs)
+ApEn = ApproximateEntropy(sim.number_of_PLLs, 2, 0.1)
 
 display_decimation = config_win.display_decimation
 frame_counter = 0
@@ -60,11 +68,14 @@ Define Simulation Loop
 
 def update():
     global timer, twod, config_win, frame_counter, duration, paused, display_decimation, \
-        phaseplot, phasexa, phaseya, phaseza, lnint
+        phaseplot, phasexa, phaseya, phaseza, graph, data, lnint, ApEn
     paused, connectivity_matrix, display_decimation = config_win.update(sim.connectivity_matrix, frame_counter)
     if not paused:
         # Stop the simulation when the duration has completed
         if sim.t >= duration:
+            print lnint.getTotal()
+            print ApEn.getTotal(0)
+            print ApEn.getTotal(1)
             timer.stop()
 
         sim.update();
@@ -78,11 +89,14 @@ def update():
                 phaseya[_i].append(tpl[1])
                 phaseza[_i].append(tpl[2])
                 integral_data.append(tpl)
-            lnint.update(integral_data)
-            if sim.t - sim.tick < 2 <= sim.t:
-                print lnint.getTotal()
+            if sim.t - sim.tick < begin_integration_time <= sim.t:
+                print "Beginning Integration."
+            if sim.t >= begin_integration_time:
+                lnint.update(integral_data)
+                ApEn.update(integral_data)
             phaseplot.update(phasexa, phaseya, phaseza)
-
+            data.append(sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift).real)
+            graph.update([data])
             image_data = array(np.zeros((sim.number_of_PLLs / render_width, render_width)), dtype=complex)
             for _i in range(0, sim.number_of_PLLs):
                 row = np.floor(_i / render_width)

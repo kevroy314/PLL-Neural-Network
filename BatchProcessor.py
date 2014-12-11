@@ -12,7 +12,9 @@ import time
 show_ui = False
 
 # Populate list of csv files in directory
-input_dir = ".\\input\\calibration_set\\"
+input_dir = r'C:\Users\Kevin\Desktop\randomly chosen data\random_pre_dog\dog4_interictal'+'\\'
+top_dir = os.path.split(os.path.relpath(input_dir))[-1]
+timestring = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
 
 input_files = []
 
@@ -21,7 +23,9 @@ for _file in os.listdir(input_dir):
         input_files.append(_file)
 
 # Create output file
-results_file = open('.\\results\\calibration_set_combined_128128_key.csv', 'w')
+results_file = open('.\\results\\' + top_dir + '_path_length_' + timestring + '.csv', 'w')
+result_file_apen_phase = open('.\\results\\' + top_dir + '_apen_phase_' + timestring + '.csv', 'w')
+result_file_apen_voltage = open('.\\results\\' + top_dir + '_apen_voltage_' + timestring + '.csv', 'w')
 
 # Set up application window
 if show_ui:
@@ -48,6 +52,7 @@ for i in range(len(input_files)):
                               in_signal_filename=input_dir+input_files[i])
 
     lnint = LineIntegral(sim.number_of_PLLs)
+    ApEn = ApproximateEntropy(sim.number_of_PLLs, 2, 0.1)
 
     """
     Initialize the GUI
@@ -77,22 +82,29 @@ for i in range(len(input_files)):
 
     def update():
         global timer, config_win, frame_counter, duration, paused, display_decimation, \
-            phaseplot, phasexa, phaseya, phaseza, lnint, show_ui, done
+            phaseplot, phasexa, phaseya, phaseza, lnint, ApEn, show_ui, done, sim, connectivity_matrix
         if show_ui:
             paused, connectivity_matrix, display_decimation = config_win.update(sim.connectivity_matrix, frame_counter)
-        if not paused:
-            # Stop the simulation when the duration has completed
-            if sim.t >= duration:
+        if sim.t >= duration:
                 result = str(lnint.getTotal())[1:-1]
+                resultApEnPhase = str(ApEn.getTotal(0))[1:-1]
+                resultApEnVoltage = str(ApEn.getTotal(1))[1:-1]
                 print "Integration Complete, Results=" + result
                 print "-------------------------------------------------------"
                 results_file.write(result + "\n")
+                result_file_apen_phase.write(resultApEnPhase + "\n")
+                result_file_apen_voltage.write(resultApEnVoltage + "\n")
                 results_file.flush()
+                result_file_apen_phase.flush()
+                result_file_apen_voltage.flush()
+                paused = True
                 done = True
                 if show_ui:
                     config_win.win.close()
                     phaseplot.win.close()
                     timer.stop()
+        if not paused:
+            # Stop the simulation when the duration has completed
 
             sim.update()
 
@@ -104,6 +116,7 @@ for i in range(len(input_files)):
                 print "Beginning Integration."
             if sim.t >= begin_integration_time:
                 lnint.update(integral_data)
+                ApEn.update(integral_data)
 
             # Graph the PLL states according to the display decimation
             if show_ui:

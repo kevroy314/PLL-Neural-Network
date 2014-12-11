@@ -99,15 +99,17 @@ class LineIntegral:
 
 
 class ApproximateEntropy:
-    def __init__(self, _numElements):
+    def __init__(self, _numElements, _M, _R):
         """
         Initialize an approximate entropy calculator.
 
         :param _numElements: The number of channels being measured independently
         """
         self.numElements = _numElements
+        self.M = _M
+        self.R = _R
         self.data = np.zeros((self.numElements, 1)).tolist()
-
+        self.data1 = np.zeros((self.numElements, 1)).tolist()
     def update(self, _d):
         """
         Update the entropy measure with new points
@@ -119,15 +121,19 @@ class ApproximateEntropy:
         if len(self.data) != len(_d):
             return
         for i in range(len(self.data)):
-            self.data[i].append(_d[i])
+            self.data[i].append(_d[i][0])
+            self.data1[i].append(_d[i][1])
 
-    def getTotal(self):
+    def getTotal(self, x=0):
         """
         Get the total approximate entropy of each channel.
 
         :return: The total length for each channel.
         """
         output = []
-        for i in range(len(self.numElements)):
-            output.append(pyeeg.ap_entropy(self.data[i],))
+        for i in range(self.numElements):
+            if x == 0:
+                output.append(pyeeg.ap_entropy(self.data[i], self.M, self.R))
+            if x == 1:
+                output.append(pyeeg.ap_entropy(self.data1[i], self.M, self.R))
         return output
