@@ -1,18 +1,18 @@
 __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
-import pyqtgraph as pg  # For GUI
+import pyqtgraph as pg
 
 
 class GraphVisualizer:
-    def __init__(self, num_rows, colors, titles, legendLayout="first",
-                 windowWidth=1000, windowHeight=600, windowTitle="PLL State Graphs"):
+    def __init__(self, num_rows, colors, titles, legend_layout="first",
+                 window_width=1000, window_height=600, window_title="PLL State Graphs"):
         """
         Initialize a graph visualizer.
 
         :param num_rows: Number of rows of graph to display (too many will cause performance)
         :param colors: Colors of the different curves in each graph
         :param titles: Titles of the curves in each graph
-        :param legendLayout: (optional, default="first") Determines where/if legends are displayed
+        :param legend_layout: (optional, default="first") Determines where/if legends are displayed
                              "first" - only display legend on first graph
                              "all" - display legend on all graphs
                              "none" - don't display legend
@@ -24,9 +24,9 @@ class GraphVisualizer:
         self.titles = titles
 
         # Create window
-        self.win = pg.GraphicsWindow(title=windowTitle)
-        self.win.resize(windowWidth, windowHeight)
-        self.win.setWindowTitle(windowTitle)
+        self.win = pg.GraphicsWindow(title=window_title)
+        self.win.resize(window_width, window_height)
+        self.win.setWindowTitle(window_title)
 
         # Set up plot environment
         self.plotAreas = []
@@ -36,13 +36,13 @@ class GraphVisualizer:
             self.plotAreas.append(self.win.addPlot())
             self.win.nextRow()
             self.plotAreas[i].enableAutoRange('xy', True)
-            if legendLayout == "all" or (legendLayout == "first" and i == 0):
-                self.legend = pg.LegendItem(offset=(0, 1))
+            if legend_layout == "all" or (legend_layout == "first" and i == 0):
+                self.legend = pg.LegendItem(offset=(0, 1))  # Ignored unresolved reference LegendItem
             for j in range(0, len(colors)):
                 self.curves.append(self.plotAreas[i].plot(pen=self.colors[j]))
-                if legendLayout == "all" or (legendLayout == "first" and i == 0):
+                if legend_layout == "all" or (legend_layout == "first" and i == 0):
                     self.legend.addItem(self.curves[j], self.titles[j])
-            if legendLayout == "all" or (legendLayout == "first" and i == 0):
+            if legend_layout == "all" or (legend_layout == "first" and i == 0):
                 self.legend.setParentItem(self.plotAreas[i])
 
     def update(self, _d):

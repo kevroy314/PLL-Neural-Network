@@ -1,11 +1,13 @@
 __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from pylab import *
+from collections import deque
 from Filters import *
 
 
-class PLL:
+class PllComplex:
     def __init__(self, _sample_rate, _carrier_frequency, _lowpass_cutoff_frequency, _phase_shift,
+                 filter_order=3, filter_window_size=100,
                  phase_detector_voltage_gain=1, vco_voltage_gain=1, vco_voltage_offset=0):
         """
         The constructor for a PLL.
@@ -31,12 +33,20 @@ class PLL:
         self.vco_voltage_gain = vco_voltage_gain
 
         self.lowpass_cutoff_frequency = _lowpass_cutoff_frequency
-        self.filter_order = 2
-        self.filter_window_size = 2
+        self.filter_order = filter_order  # Smoother Curvature
+        # (low=jagged, high=smooth: little to no effect on noise level compared to window size)
+        self.filter_window_size = filter_window_size  # Tighter Cruve
+        # (low=tight, high=loose) with order 2, 3 window size is enough to smooth noise)
 
         self.previous_voltage = 1
 
-        self.detected_phase_log = []
+        self.disable_lowpass = False
+
+        self.disable_logging = True
+        if self.disable_logging:
+            self.detected_phase_log = deque(np.zeros(self.filter_window_size, dtype='f'), self.filter_window_size)
+        else:
+            self.detected_phase_log = []
         self.applied_phase_shift_log = []
         self.output_voltage_log = []
 
@@ -50,13 +60,13 @@ class PLL:
         """
         return sin(theta)
 
-    def update(self, _t, _y, _PLLs, _self_index, _connectivity_matrix):
+    def update(self, _t, _y, _plls, _self_index, _connectivity_matrix):
         """
         The primary update function for the simulation.
 
         :param _t: the current simulation time in seconds
         :param _y: the input signal voltage in volts
-        :param _PLLs: the list of PLLs in the simulation to interact with
+        :param _plls: the list of PLLs in the simulation to interact with
         :param _self_index: the index of the PLL being called
         :param _connectivity_matrix: the connectivity matrix to use for updating
         :return: the next sample output from the PLL in volts
@@ -65,28 +75,45 @@ class PLL:
 
         # Phase Detector
         detected_phase = 0
-        if len(self.output_voltage_log) != 0:
+        if len(self.detected_phase_log) != 0 or self.disable_logging:
             detected_phase = _y * self.previous_voltage * self.phase_detector_voltage_gain
-        self.detected_phase_log.append(detected_phase)
 
-        # Lowpass Filter
-        filtered_phase = lowpass(self.detected_phase_log, self.filter_window_size, self.lowpass_cutoff_frequency,
-                                 self.carrier_frequency, self.filter_order)
+        if self.disable_logging:
+            self.detected_phase_log.append(detected_phase)
+            self.detected_phase_log.popleft()  # Ignored unresolved reference for popleft
+        else:
+            self.detected_phase_log.append(detected_phase)
+
+        if not self.disable_lowpass:
+            # Lowpass Filter
+            filtered_phase = lowpass(self.detected_phase_log, self.lowpass_cutoff_frequency,
+                                     self.carrier_frequency, self.filter_order)
+        else:
+            filtered_phase = detected_phase
 
         # Determine Weighted Phase Adjustment
+
         phase_aggregator = float(0)
-        for _j in range(0, len(_PLLs)):
-            phase_aggregator += _connectivity_matrix[_self_index][_j] * cos(_PLLs[_j].current_phase_shift)
-        if len(_PLLs) == 1:
+        for _j in range(0, len(_plls)):
+            phase_aggregator += (_connectivity_matrix[_self_index][_j].real *
+                                 self.v(_plls[_j].current_phase_shift - pi / 2)) + \
+                                (_connectivity_matrix[_self_index][_j].imag *
+                                 self.v(_plls[_j].current_phase_shift))
+
+        if len(_plls) == 1:
             self.next_phase_shift = filtered_phase
         else:
-            self.next_phase_shift = (sin(filtered_phase) * phase_aggregator)
-        self.applied_phase_shift_log.append(self.next_phase_shift)
+            self.next_phase_shift = (self.v(filtered_phase) * phase_aggregator)
+        if not self.disable_logging:
+            self.applied_phase_shift_log.append(self.next_phase_shift)
 
         # Voltage Controlled Oscillator
-        output_voltage = self.vco_voltage_gain * sin(_t * self.two_pi_carrier_frequency + self.next_phase_shift) + \
-                         self.vco_voltage_offset
-        self.output_voltage_log.append(output_voltage)
+        output_voltage = self.vco_voltage_gain * sin(
+            _t * self.two_pi_carrier_frequency + abs(self.next_phase_shift)) + \
+            self.vco_voltage_offset  # TODO - Needs decision about complex value abs problem/solution
+
+        if not self.disable_logging:
+            self.output_voltage_log.append(output_voltage)
         self.previous_voltage = output_voltage
 
         # END PLL block

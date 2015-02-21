@@ -1,4 +1,4 @@
-__author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
+__author__ = 'Kevin Horecka, kevin.horecka@gmail.com'  # TODO - Review for frequency vs sample rate conversion issue
 
 from scipy import signal
 
@@ -49,11 +49,10 @@ def cheby2_lowpass_filter(_data, _frequency_cutoff, _carrier_frequency, order):
     return signal.lfilter(b, a, _data)
 
 
-def lowpass(_data, _filter_window_size, _frequency_cutoff, _carrier_frequency, _order, filter_type="cheby2"):
+def lowpass(_data, _frequency_cutoff, _carrier_frequency, _order, filter_type="cheby2"):
     """
 
     :param _data: The data to be lowpassed (entire data set)
-    :param _filter_window_size: The filter window size (subset of data to be lowpassed)
     :param _frequency_cutoff: The frequency cutoff for the filter
     :param _carrier_frequency: The carrier frequency for the filter
     :param _order: The order of the filter

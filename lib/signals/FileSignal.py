@@ -1,4 +1,4 @@
-__author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
+__author__ = 'Kevin Horecka, kevin.horecka@gmail.com'  # TODO - Change this function to read file in update, not init
 
 import csv
 from pylab import *  # For PLL
@@ -13,6 +13,7 @@ class FileSignal:
         self.rownum = _rownum
         self.colnum = _colnum
         self.loop = _loop
+        self.complete = False
 
         if _rowwise:
             with open(_filename, 'rb') as f:
@@ -20,7 +21,7 @@ class FileSignal:
                 i = 0
                 for row in reader:
                     if i == _rownum:
-                        self.data = np.array(row).astype(float).tolist()
+                        self.data = np.array(row).astype('float').tolist()
                         break
                     i += 1
         else:
@@ -34,8 +35,12 @@ class FileSignal:
 
     def update(self, _t):
         index = int(_t * self.sample_rate)
+        output = 0
         if self.loop:
-            val = self.data[index % len(self.data)]
+            output = self.data[index % len(self.data)]
         else:
-            val = self.data[index]
-        return val
+            if index > len(self.data):
+                self.complete = True
+            else:
+                output = self.data[index]
+        return output

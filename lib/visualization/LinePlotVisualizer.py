@@ -6,9 +6,9 @@ import numpy as np
 
 
 class LinePlotVisualizer:
-    def __init__(self, numLines, windowTitle="Line Plot", distance=40, elevation=90, fov=60, azimuth=0):
-        self.numLines = numLines
-        self.windowTitle = windowTitle
+    def __init__(self, num_lines, window_title="Line Plot", distance=40, elevation=90, fov=60, azimuth=0):
+        self.numLines = num_lines
+        self.windowTitle = window_title
 
         # Create Window
         self.win = gl.GLViewWidget()
@@ -20,15 +20,15 @@ class LinePlotVisualizer:
         self.win.setWindowTitle(self.windowTitle)
 
         # Add Grid Lines
-        self.gx = gl.GLGridItem()
+        self.gx = gl.GLGridItem()  # Ignored unresolved item GLGridItem
         self.gx.rotate(90, 0, 1, 0)
         self.gx.translate(-10, 0, 0)
         self.win.addItem(self.gx)
-        self.gy = gl.GLGridItem()
+        self.gy = gl.GLGridItem()  # Ignored unresolved item GLGridItem
         self.gy.rotate(90, 1, 0, 0)
         self.gy.translate(0, -10, 0)
         self.win.addItem(self.gy)
-        self.gz = gl.GLGridItem()
+        self.gz = gl.GLGridItem()  # Ignored unresolved item GLGridItem
         self.gz.translate(0, 0, -10)
         self.win.addItem(self.gz)
 
@@ -36,6 +36,7 @@ class LinePlotVisualizer:
         self.plts = []
         for i in range(self.numLines):
             self.pts.append(np.vstack([[], [], []]).transpose())
+            # Ignored unresolved item GLLinePlotItem
             self.plts.append(gl.GLLinePlotItem(color=pg.glColor((i, self.numLines*1.3)), antialias=True))
             self.win.addItem(self.plts[i])
 

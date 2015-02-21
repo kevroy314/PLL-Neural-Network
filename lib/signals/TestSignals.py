@@ -48,7 +48,7 @@ class ComplexSineSignal:
         :param _amplitude: the amplitude of the sine wave in volts
         :param _frequency: the frequency of the sine wave in Hz
         :param _phase: the phase of the sine wave in radians
-        :param _noise_level: (optional) the absolute noise level of the sine wave (default 0)
+        :param noise_level: (optional) the absolute noise level of the sine wave (default 0)
         :param voltage_offset: (optional) the offset of the sine wave voltage (default 0)
         """
         self.frequency = _frequency
