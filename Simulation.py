@@ -1,4 +1,4 @@
-__author__ = 'Kevin Horecka, kevin.horecka@gmail.com'  # TODO - Needs review for UI load/hang time, UI config, and IO
+__author__ = 'Kevin Horecka, kevin.horecka@gmail.com'  # TODO Investigate overall slowdown and memory leak over time
 
 from pyqtgraph.Qt import QtGui, QtCore  # For GUI
 import pyqtgraph as pg  # For GUI
@@ -17,7 +17,7 @@ from lib.PLLs.PLL_Network import ComplexPllNetwork
 Initialize the Simulation
 """
 input_dir = r"C:\Users\Kevin\Desktop\School" + '\\'
-input_file = "data.csv"
+input_file = "data.npy"
 
 paused = True
 duration = 9890
@@ -46,41 +46,49 @@ sim = ComplexPllNetwork(number_of_plls=16, sample_rate=400.0,
                         filter_order=3, filter_window_size=100,
                         in_signals_filename=input_dir + input_file)
 
+# Output Configuration
+save_raw_file = False
+inline_apen = False
+inline_path_length = False
+
+if save_raw_file:
+    phase_file = open(input_dir + 'phase_file_out.csv', 'w')
+    voltage_file = open(input_dir + 'voltage_file_out.csv', 'w')
+
+if inline_apen:
+    ApEn = ApproximateEntropy(sim.number_of_PLLs, 2, 0.1)
+if inline_path_length:
+    lnint = LineIntegral(sim.number_of_PLLs)
+
 """
 Initialize the GUI
 """
 
-# Renderer Properties
-render_video = False
+# UI Element Properties
+show_graphs = True
+show_phase_plot = True
 
 # Set up application window
 app = QtGui.QApplication([])
 pg.setConfigOptions(antialias=True)
 
+
+if show_graphs:
+    graph = GraphVisualizer(2, [(255, 255, 255)], ["PLL 0 Phase", "PLL 0 Input Voltage"])
+    data0 = []
+    data1 = []
+
+if show_phase_plot:
+    phaseplot = LinePlotVisualizer(sim.number_of_PLLs, window_title="Phase Plot", distance=4.7625370521)
+    phasexa = []
+    phaseya = []
+    phaseza = []
+    for i in range(phaseplot.numLines):
+        phasexa.append([])
+        phaseya.append([])
+        phaseza.append([])
+
 config_win = ConfigurationWindow(1, pause)
-
-render_width = 1
-
-graph = GraphVisualizer(2, [(255, 255, 255)], ["PLL 0 Phase", "PLL 0 Input Voltage"])
-data0 = []
-data1 = []
-
-twod = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs / render_width), "Real Phase Image")
-twodimag = TwoDVisualizer(int(render_width), int(sim.number_of_PLLs / render_width), "Imaginary Phase Image")
-phaseplot = LinePlotVisualizer(sim.number_of_PLLs, window_title="Phase Plot", distance=4.7625370521)
-phasexa = []
-phaseya = []
-phaseza = []
-for i in range(phaseplot.numLines):
-    phasexa.append([])
-    phaseya.append([])
-    phaseza.append([])
-
-lnint = LineIntegral(sim.number_of_PLLs)
-ApEn = ApproximateEntropy(sim.number_of_PLLs, 2, 0.1)
-
-phase_file = open(input_dir + 'phase_file_out.csv', 'w')
-voltage_file = open(input_dir + 'voltage_file_out.csv', 'w')
 
 display_decimation = config_win.display_decimation
 frame_counter = 0
@@ -94,74 +102,67 @@ Define Simulation Loop
 
 
 def update():
-    global timer, twod, config_win, frame_counter, duration, paused, display_decimation, \
+    global timer, config_win, frame_counter, duration, paused, display_decimation, \
         phaseplot, phasexa, phaseya, phaseza, graph, data0, data1, lnint, ApEn
+    # Update the configuration window no matter what (look for pause requests and display decimation)
     paused, display_decimation = config_win.update(frame_counter)
+
+    # If the system is not paused, run the simulation code
     if not paused:
-        # Stop the simulation when the duration has completed
+        # Stop the simulation when the duration has completed (and perform appropriate shutdown)
         if sim.t >= duration:
-            phase_file.close()
-            voltage_file.close()
-            print lnint.getTotal()
-            print ApEn.getTotal(0)
-            print ApEn.getTotal(1)
+            if save_raw_file:
+                phase_file.close()
+                voltage_file.close()
+            if inline_apen:
+                print ApEn.getTotal(0)
+                print ApEn.getTotal(1)
+            if inline_path_length:
+                print lnint.getTotal()
             timer.stop()
 
+        # Warn the user when the transition to monitoring happens (if monitoring lag is used)
+        if sim.t - sim.tick < begin_integration_time <= sim.t or \
+                (begin_integration_time == 0 and sim.t == 0):
+            print "Beginning Integration."
+
+        # Update the simulation
         sim.update()
 
-        # Graph the PLL states according to the display decimation
-        if frame_counter % display_decimation == 0:
-            integral_data = []
+        # Prepare the data for any of the output conditions (condensed to one loop for efficiency)
+        if inline_apen or inline_path_length or save_raw_file:
             phase_line = ""
             voltage_line = ""
+            integral_data = []
             for _i in range(sim.number_of_PLLs):
-                phase_line = phase_line + str(sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift).real) + ","
-                voltage_line = voltage_line + str(sim.PLLs[_i].previous_voltage.real) + ","
-            for _i in range(phaseplot.numLines):
                 tpl = (sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift).real, sim.PLLs[_i].previous_voltage.real, 0)
-                phasexa[_i].append(tpl[0])
-                phaseya[_i].append(tpl[1])
-                phaseza[_i].append(tpl[2])
                 integral_data.append(tpl)
-            if sim.t - sim.tick < begin_integration_time <= sim.t:
-                print "Beginning Integration."
-            if sim.t >= begin_integration_time:
+                if save_raw_file:
+                    phase_line = phase_line + str(tpl[0]) + ","
+                    voltage_line = voltage_line + str(tpl[1]) + ","
+
+        # If monitoring has begin, conditionally perform outputs
+        if sim.t >= begin_integration_time:
+            if save_raw_file:
                 phase_file.write(phase_line[0:-1] + "\n")
                 voltage_file.write(voltage_line[0:-1] + "\n")
-                lnint.update(integral_data)
+            if inline_apen:
                 ApEn.update(integral_data)
-            phaseplot.update(phasexa, phaseya, phaseza)
-            data0.append(sim.PLLs[0].v(sim.PLLs[0].next_phase_shift).real)
-            data1.append(sim.last_input[0])
-            graph.update([data0, data1])
-            image_data = array(np.zeros((sim.number_of_PLLs / render_width, render_width)), dtype=complex)
-            for _i in range(0, sim.number_of_PLLs):
-                row = np.floor(_i / render_width)
-                col = _i % render_width
-                image_data[row][col] = sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift)
-            img_rotated = np.rot90(image_data, 3)
-            twod.update(img_rotated.real, auto_levels=True)
-            twodimag.update(img_rotated.imag, auto_levels=True)
-            if render_video:
-                # r, g, and b are 512x512 float arrays with values >= 0 and < 1.
-                rgb_array = np.zeros((sim.number_of_PLLs / render_width, render_width, 3), 'uint8')
-                rgb_array[..., 0] = image_data.real * 255
-                rgb_array[..., 1] = 0
-                rgb_array[..., 2] = image_data.imag * 255
-                img = Image.fromarray(rgb_array)
-                img.save('.\\video\\img_' + str(frame_counter).zfill(5) + '.png')
-                realexporter = pg.exporters.ImageExporter.ImageExporter(twod.img)  # Ignore unresolved exporters ref
-                imagexporter = pg.exporters.ImageExporter.ImageExporter(twodimag.img)  # Ignore unresolved exporters ref
+            if inline_path_length:
+                lnint.update(integral_data)
 
-                # set export parameters if needed
-                realexporter.parameters()['width'] = int(render_width)  # (note this also affects height parameter)
-                realexporter.parameters()['height'] = int(
-                    sim.number_of_PLLs / render_width)  # (note this also affects height parameter)
-                imagexporter.parameters()['width'] = int(render_width)  # (note this also affects height parameter)
-                imagexporter.parameters()['height'] = int(
-                    sim.number_of_PLLs / render_width)  # (note this also affects height parameter)
-                realexporter.export('.\\video\\real\\img_' + str(frame_counter).zfill(5) + '.png')
-                imagexporter.export('.\\video\\imaginary\\img_' + str(frame_counter).zfill(5) + '.png')
+        # Visualize the system according to the display decimation
+        if frame_counter % display_decimation == 0:
+            if show_phase_plot:
+                for _i in range(phaseplot.numLines):
+                    phasexa[_i].append(sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift).real)
+                    phaseya[_i].append(sim.PLLs[_i].previous_voltage.real)
+                    phaseza[_i].append(0)
+                phaseplot.update(phasexa, phaseya, phaseza)
+            if show_graphs:
+                data0.append(sim.PLLs[0].v(sim.PLLs[0].next_phase_shift).real)
+                data1.append(sim.last_input[0])
+                graph.update([data0, data1])
 
         # Iterate the display frame counter
         frame_counter += 1

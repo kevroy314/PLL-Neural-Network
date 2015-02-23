@@ -2,6 +2,7 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 from pyqtgraph.Qt import QtGui
 import pyqtgraph as pg
+import time
 
 
 class ConfigurationWindow:
@@ -15,6 +16,10 @@ class ConfigurationWindow:
         self.display_decimation = _display_decimation
         self.iteration = 0
         self.paused = pause
+
+        self.last_update_call = time.time() * 1000
+        self.timer_window_size = 10.0
+        self.timer_last = 0.0
 
         self.win = QtGui.QMainWindow()
         self.win.resize(300, 200)
@@ -55,7 +60,12 @@ class ConfigurationWindow:
         self.display_decimation = _sb.value()
 
     def update_iteration_text(self):
-        self.iterationLabel.setText("Iteration #: " + str(self.iteration))
+        current_time = time.time() * 1000
+        time_diff = current_time - self.last_update_call
+        averaged_time = (self.timer_last * ((self.timer_window_size - 1.0) / self.timer_window_size)) + (time_diff * (1 / self.timer_window_size))
+        self.iterationLabel.setText("Iteration #: " + str(self.iteration) + " in " + str(averaged_time) + "ms")
+        self.timer_last = averaged_time
+        self.last_update_call = current_time
 
     def pause(self):
         """

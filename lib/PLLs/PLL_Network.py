@@ -45,8 +45,10 @@ class ComplexPllNetwork:
                                         filter_order=self.filter_order, filter_window_size=self.filter_window_size))
 
         # Create Input Signals
-        for i in range(0, self.number_of_PLLs):
-            self.input_signals.append(FileSignal(self.in_signals_filename, self.sample_rate, _rownum=i))
+        start_time = datetime.datetime.now()
+        self.input_signals = FileSignal.construct_signals_from_numpy_binary(self.in_signals_filename, self.sample_rate)
+        execution_time = datetime.datetime.now() - start_time
+        print "Input file loaded in " + str(execution_time) + "ms"
 
     def update(self):  # Update the test signal and the ppl (iterate simulation)
         for _i in range(0, self.number_of_PLLs):
