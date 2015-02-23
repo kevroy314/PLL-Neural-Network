@@ -3,11 +3,8 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'  # TODO Investigate overal
 from pyqtgraph.Qt import QtGui, QtCore  # For GUI
 import pyqtgraph as pg  # For GUI
 
-from PIL import Image
-
 from lib.visualization.LinePlotVisualizer import LinePlotVisualizer
 from lib.visualization.GraphVisualizer import GraphVisualizer
-from lib.visualization.TwoDVisualizer import TwoDVisualizer
 from lib.app_modules.ConfigurationWindow import ConfigurationWindow
 from lib.utils.HelperFunctions import *
 from lib.PLLs.PLL_Network import ComplexPllNetwork
@@ -52,13 +49,17 @@ inline_apen = False
 inline_path_length = False
 
 if save_raw_file:
+    phase_line = ""
+    voltage_line = ""
     phase_file = open(input_dir + 'phase_file_out.csv', 'w')
     voltage_file = open(input_dir + 'voltage_file_out.csv', 'w')
 
 if inline_apen:
     ApEn = ApproximateEntropy(sim.number_of_PLLs, 2, 0.1)
+    integral_data = []
 if inline_path_length:
     lnint = LineIntegral(sim.number_of_PLLs)
+    integral_data = []
 
 """
 Initialize the GUI
@@ -103,7 +104,8 @@ Define Simulation Loop
 
 def update():
     global timer, config_win, frame_counter, duration, paused, display_decimation, \
-        phaseplot, phasexa, phaseya, phaseza, graph, data0, data1, lnint, ApEn
+        phaseplot, phasexa, phaseya, phaseza, graph, data0, data1, lnint, ApEn, \
+        integral_data, phase_line, voltage_line
     # Update the configuration window no matter what (look for pause requests and display decimation)
     paused, display_decimation = config_win.update(frame_counter)
 
@@ -144,8 +146,8 @@ def update():
         # If monitoring has begin, conditionally perform outputs
         if sim.t >= begin_integration_time:
             if save_raw_file:
-                phase_file.write(phase_line[0:-1] + "\n")
-                voltage_file.write(voltage_line[0:-1] + "\n")
+                phase_file.write("{0}\n".format(phase_line[0:-1]))
+                voltage_file.write("{0}\n".format(voltage_line[0:-1]))
             if inline_apen:
                 ApEn.update(integral_data)
             if inline_path_length:
