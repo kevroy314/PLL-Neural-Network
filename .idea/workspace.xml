@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7c49fa45-7767-4374-9891-2148af150274" name="Default" comment="-Completed todo items&#10;-Reviewed frequency and phase units and scaling and modified filters accordingly (they should be in the proper units now)&#10;-Changed path length and">
-      <change type="MOVED" beforePath="C:\Users\Kevin\Documents\GitHub\PLL-Neural-Network\Batch.py" afterPath="$PROJECT_DIR$/misc/Batch.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/PLLs/Filters.py" afterPath="$PROJECT_DIR$/lib/PLLs/Filters.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/visualization/GraphVisualizer.py" afterPath="$PROJECT_DIR$/lib/visualization/GraphVisualizer.py" />
+    <list default="true" id="7c49fa45-7767-4374-9891-2148af150274" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/utils/HelperFunctions.py" afterPath="$PROJECT_DIR$/lib/utils/HelperFunctions.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/PLLs/PLL.py" afterPath="$PROJECT_DIR$/lib/PLLs/PLL.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/PLLs/PLL_Network.py" afterPath="$PROJECT_DIR$/lib/PLLs/PLL_Network.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Simulation.py" afterPath="$PROJECT_DIR$/Simulation.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -35,42 +30,22 @@
       <file leaf-file-name="Simulation.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Simulation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-1.1104199" vertical-offset="765" max-vertical-offset="3587">
-              <caret line="3" column="33" selection-start-line="3" selection-start-column="33" selection-end-line="3" selection-end-column="33" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="GraphVisualizer.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/visualization/GraphVisualizer.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1088">
-              <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="PLL_Network.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/PLLs/PLL_Network.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1394">
-              <caret line="6" column="0" selection-start-line="6" selection-start-column="0" selection-end-line="6" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.4313433" vertical-offset="0" max-vertical-offset="3706">
+              <caret line="17" column="34" selection-start-line="17" selection-start-column="34" selection-end-line="17" selection-end-column="34" />
               <folding>
-                <element signature="e#55#94#0" expanded="true" />
+                <element signature="e#55#104#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="PLL.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/PLLs/PLL.py">
+      <file leaf-file-name="HelperFunctions.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/utils/HelperFunctions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-30.964285" vertical-offset="0" max-vertical-offset="2397">
-              <caret line="51" column="114" selection-start-line="51" selection-start-column="38" selection-end-line="51" selection-end-column="114" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="357" max-vertical-offset="2363">
+              <caret line="49" column="0" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
               <folding>
-                <element signature="e#55#74#0" expanded="true" />
+                <element signature="e#55#65#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -126,9 +101,9 @@
         <option value="$PROJECT_DIR$/lib/PLLs/PLL_Network.py" />
         <option value="$PROJECT_DIR$/lib/PLLs/Filters.py" />
         <option value="$PROJECT_DIR$/lib/PLLs/PLL.py" />
-        <option value="$PROJECT_DIR$/lib/utils/HelperFunctions.py" />
         <option value="$PROJECT_DIR$/misc/Batch.py" />
         <option value="$PROJECT_DIR$/lib/visualization/GraphVisualizer.py" />
+        <option value="$PROJECT_DIR$/lib/utils/HelperFunctions.py" />
         <option value="$PROJECT_DIR$/Simulation.py" />
       </list>
     </option>
@@ -685,7 +660,11 @@
       <created>1424662479690</created>
       <updated>1424662479690</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="-Completed todo items&#10;-Reviewed frequency and phase units and scaling and modified filters accordingly (they should be in the proper units now)&#10;-Changed path length and approximate entropy measures to be rolling window measurements&#10;-Added staged output measurement for PLL to graph (for diagnostics)&#10;-Removed batch processor (shouldn't need it now that files are long time series data)&#10;-Some minor variable name refactoring&#10;-Did an audit of performance of Simulation.py No detected memory leaks or slowdowns! Hurray!">
+      <created>1425259411268</created>
+      <updated>1425259411268</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -710,23 +689,23 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32929516" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32900432" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3270925" sideWeight="0.49920508" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33297297" sideWeight="0.49894625" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33225107" sideWeight="0.49894625" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17544784" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3589189" sideWeight="0.81240064" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3582251" sideWeight="0.81240064" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33297297" sideWeight="0.50105375" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23027027" sideWeight="0.8561208" order="11" side_tool="false" content_ui="tabs" x="167" y="460" width="1672" height="276" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3318919" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23051947" sideWeight="0.8561208" order="11" side_tool="false" content_ui="tabs" x="167" y="460" width="1672" height="276" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33116883" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.17621621" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
@@ -789,7 +768,9 @@
     <MESSAGE value="-Significant Refactoring (now in line with PyCharm style guidelines)&#10;-Short audit of all system files (non-archive files) and TODO items added&#10;-Removed functionality that uses .bmp images for input signals and connectivity matrix (values are input manually or from file now)&#10;-Added a connectivity matrix for electrode euclidean distances&#10;-Refactored pyeeg.py to conform to style guidelines and remove errors (revert to original if problems occur).&#10;-Removed all &quot;Real Value&quot; functionality (only Complex Value functionality remains)&#10;-Removed unused project items (ProgressBar and ThreeDVisualizer have been moved to archive)&#10;-Removed in signals and other unused items from previous analyses" />
     <MESSAGE value="-Added binary file loader to input signals (took load times on my PC from 36 seconds to .2 seconds)&#10;-Added a converter that turns CSV into numpy binary file (see ConvertCSVToNumpyBinary.py for more details)&#10;-Added GUI disabling options and cleaned up Simulation.py&#10;-Added enable/disable options for different output types&#10;-Added benchmarker to config window (simple 10 point moving window timer in ConfigurationWindow.py)" />
     <MESSAGE value="-Minor changes to Simulation.py to clean up formatting and prevent edge case runtime error in metric variables (really just for a test commit)" />
-    <option name="LAST_COMMIT_MESSAGE" value="-Minor changes to Simulation.py to clean up formatting and prevent edge case runtime error in metric variables (really just for a test commit)" />
+    <MESSAGE value="-Completed todo items&#10;-Reviewed frequency and phase units and scaling and modified filters accordingly (they should be in the proper units now)&#10;-Changed path length and approximate entropy measures to be rolling window measurements&#10;-Added staged output measurement for PLL to graph (for diagnostics)&#10;-Removed batch processor (shouldn't need it now that files are long time series data)&#10;-Some minor variable name refactoring&#10;-Did an audit of performance of Simulation.py No detected memory leaks or slowdowns! Hurray!" />
+    <MESSAGE value="Running data." />
+    <option name="LAST_COMMIT_MESSAGE" value="Running data." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -832,7 +813,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="1110" max-vertical-offset="3502">
           <caret line="90" column="58" selection-start-line="90" selection-start-column="58" selection-end-line="90" selection-end-column="58" />
-          <folding />
+          <folding>
+            <element signature="e#55#104#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -882,7 +865,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3247">
           <caret line="40" column="13" selection-start-line="40" selection-start-column="13" selection-end-line="40" selection-end-column="13" />
-          <folding />
+          <folding>
+            <element signature="e#55#104#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -911,7 +896,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="345" max-vertical-offset="3400">
           <caret line="27" column="22" selection-start-line="27" selection-start-column="22" selection-end-line="27" selection-end-column="22" />
-          <folding />
+          <folding>
+            <element signature="e#55#104#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -940,7 +927,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3400">
           <caret line="27" column="22" selection-start-line="27" selection-start-column="22" selection-end-line="27" selection-end-column="22" />
-          <folding />
+          <folding>
+            <element signature="e#55#104#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -969,7 +958,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3400">
           <caret line="27" column="22" selection-start-line="27" selection-start-column="22" selection-end-line="27" selection-end-column="22" />
-          <folding />
+          <folding>
+            <element signature="e#55#104#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1141,37 +1132,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/utils/HelperFunctions.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.385399" vertical-offset="0" max-vertical-offset="2329">
-          <caret line="48" column="32" selection-start-line="48" selection-start-column="32" selection-end-line="48" selection-end-column="32" />
-          <folding>
-            <element signature="e#55#65#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/visualization/GraphVisualizer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1088">
-          <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/PLLs/PLL_Network.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1394">
-          <caret line="6" column="0" selection-start-line="6" selection-start-column="0" selection-end-line="6" selection-end-column="0" />
-          <folding>
-            <element signature="e#55#94#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/lib/PLLs/PLL.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-30.964285" vertical-offset="0" max-vertical-offset="2397">
+        <state vertical-scroll-proportion="1.3236641" vertical-offset="0" max-vertical-offset="2397">
           <caret line="51" column="114" selection-start-line="51" selection-start-column="38" selection-end-line="51" selection-end-column="114" />
           <folding>
             <element signature="e#55#74#0" expanded="true" />
@@ -1179,11 +1142,41 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/lib/PLLs/PLL_Network.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.14934114" vertical-offset="0" max-vertical-offset="1394">
+          <caret line="6" column="0" selection-start-line="6" selection-start-column="0" selection-end-line="6" selection-end-column="0" />
+          <folding>
+            <element signature="e#55#94#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/visualization/GraphVisualizer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.3235725" vertical-offset="255" max-vertical-offset="1088">
+          <caret line="28" column="45" selection-start-line="28" selection-start-column="45" selection-end-line="28" selection-end-column="45" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/utils/HelperFunctions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="357" max-vertical-offset="2363">
+          <caret line="49" column="0" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
+          <folding>
+            <element signature="e#55#65#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Simulation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-1.1104199" vertical-offset="765" max-vertical-offset="3587">
-          <caret line="3" column="33" selection-start-line="3" selection-start-column="33" selection-end-line="3" selection-end-column="33" />
-          <folding />
+        <state vertical-scroll-proportion="0.4313433" vertical-offset="0" max-vertical-offset="3706">
+          <caret line="17" column="34" selection-start-line="17" selection-start-column="34" selection-end-line="17" selection-end-column="34" />
+          <folding>
+            <element signature="e#55#104#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

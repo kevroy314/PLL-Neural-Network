@@ -45,6 +45,8 @@ def get_rgb_image_data_from_file(filename):
     _data = list(_img.getdata())
     return np.array(_data)
 
+# TODO add file I/O option for measures
+
 
 class WindowedPathLengthMeasure:
     def __init__(self, num_elements, buffer_length):
@@ -58,7 +60,7 @@ class WindowedPathLengthMeasure:
         if self.bufferLength < 2:
             print "Buffer length is too small. Adjusting to length=2."
             self.bufferLength = 2
-        self.rollingSum = 0
+        self.rollingSums = np.zeros(num_elements)
         self.lengths = []
         self.data = []
         for i in range(0, num_elements):
@@ -84,12 +86,12 @@ class WindowedPathLengthMeasure:
                 b = self.data[i][-2]
                 s = np.subtract(a, b)  # Ignored missing np.subtract reference
                 r = np.linalg.norm(s)
-                self.rollingSum += r
+                self.rollingSums[i] += r
                 if len(self.lengths[i]) == self.bufferLength:
-                    self.rollingSum -= self.lengths[i].popleft()
+                    self.rollingSums[i] -= self.lengths[i].popleft()
                 self.lengths[i].append(r)
 
-        return self.rollingSum
+        return self.rollingSums
 
 
 class WindowedApproximateEntropyMeasure:
