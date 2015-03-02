@@ -1,4 +1,4 @@
-__author__ = 'Kevin Horecka, kevin.horecka@gmail.com'  # TODO - Needs complete review/overhaul
+__author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 
 import time
 
@@ -72,7 +72,7 @@ for i in range(len(input_files)):
                             filter_order=3, filter_window_size=100,
                             in_signals_filename=input_dir + input_files[i])
 
-    lnint = LineIntegral(sim.number_of_PLLs)
+    path_length = LineIntegral(sim.number_of_PLLs)
     ApEn = ApproximateEntropy(sim.number_of_PLLs, 2, 0.1)
 
     """
@@ -103,7 +103,7 @@ for i in range(len(input_files)):
 
     def update():
         global timer, config_win, frame_counter, duration, paused, display_decimation, \
-            phaseplot, phasexa, phaseya, phaseza, lnint, ApEn, show_ui, done, sim, connectivity_matrix
+            phaseplot, phasexa, phaseya, phaseza, path_length, ApEn, show_ui, done, sim, connectivity_matrix
         if show_ui:
             paused, connectivity_matrix, display_decimation = config_win.update(sim.connectivity_matrix, frame_counter)
         if sim.t >= duration:

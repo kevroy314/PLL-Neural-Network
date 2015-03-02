@@ -3,6 +3,7 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 import PIL
 from pylab import *  # For PLL
 import lib.utils.pyeeg as pyeeg
+from collections import deque
 
 
 def print_padded_matrix(in_matrix):
@@ -45,16 +46,24 @@ def get_rgb_image_data_from_file(filename):
     return np.array(_data)
 
 
-class LineIntegral:  # TODO - Needs efficiency review and modifications for windowed processing
-    def __init__(self, num_elements):
+class WindowedPathLengthMeasure:
+    def __init__(self, num_elements, buffer_length):
         """
         Initialize a line integral calculator.
 
         :param num_elements: The number of channels being integrated independently
         """
         self.numElements = num_elements
-        self.lengths = np.zeros((self.numElements, 1)).tolist()
-        self.data = np.zeros((self.numElements, 1)).tolist()
+        self.bufferLength = buffer_length
+        if self.bufferLength < 2:
+            print "Buffer length is too small. Adjusting to length=2."
+            self.bufferLength = 2
+        self.rollingSum = 0
+        self.lengths = []
+        self.data = []
+        for i in range(0, num_elements):
+            self.data.append(deque([], buffer_length))
+            self.lengths.append(deque([], buffer_length))
 
     def update(self, _d):
         """
@@ -67,49 +76,39 @@ class LineIntegral:  # TODO - Needs efficiency review and modifications for wind
         if len(self.data) != len(_d):
             return
         for i in range(len(self.data)):
+            if len(self.data[i]) == self.bufferLength:
+                self.data[i].popleft()
             self.data[i].append(_d[i])
-            a = self.data[i][-1]
-            b = self.data[i][-2]
-            s = np.subtract(a, b)  # Ignored missing np.subtract reference
-            r = np.linalg.norm(s)
-            self.lengths[i].append(r)
+            if len(self.data[i]) >= 2:
+                a = self.data[i][-1]
+                b = self.data[i][-2]
+                s = np.subtract(a, b)  # Ignored missing np.subtract reference
+                r = np.linalg.norm(s)
+                self.rollingSum += r
+                if len(self.lengths[i]) == self.bufferLength:
+                    self.rollingSum -= self.lengths[i].popleft()
+                self.lengths[i].append(r)
 
-    def get_total(self):
-        """
-        Get the total length of each channel line.
-
-        :return: The total length for each channel.
-        """
-        output = []
-        for i in range(len(self.lengths)):
-            output.append(np.sum(self.lengths[i]))
-        return output
-
-    '''    def getAverage(self):
-        """
-        Get the average line length across iterations.
-
-        :return: The average length for each channel.
-        """
-        output = []
-        for i in range(len(self.lengths)):
-            output.append(np.average(self.lengths[i]))
-        return output
-    '''
+        return self.rollingSum
 
 
-class ApproximateEntropy:  # TODO - Needs efficiency review and modifications for windowed processing
-    def __init__(self, num_elements, m, r):
+class WindowedApproximateEntropyMeasure:
+    def __init__(self, num_elements, buffer_length, m, r):
         """
         Initialize an approximate entropy calculator.
 
         :param num_elements: The number of channels being measured independently
         """
         self.numElements = num_elements
+        self.bufferLength = buffer_length
+        if self.bufferLength < 2:
+            print "Buffer length is too small. Adjusting to length=2."
+            self.bufferLength = 2
         self.M = m
         self.R = r
-        self.data = np.zeros((self.numElements, 1)).tolist()
-        self.data1 = np.zeros((self.numElements, 1)).tolist()
+        self.data = []
+        for i in range(0, num_elements):
+            self.data.append(deque([], buffer_length))
 
     def update(self, _d):
         """
@@ -122,19 +121,12 @@ class ApproximateEntropy:  # TODO - Needs efficiency review and modifications fo
         if len(self.data) != len(_d):
             return
         for i in range(len(self.data)):
-            self.data[i].append(_d[i][0])
-            self.data1[i].append(_d[i][1])
+            if len(self.data[i]) == self.bufferLength:
+                self.data[i].popleft()
+            self.data[i].append(_d[i])
 
-    def get_total(self, x=0):
-        """
-        Get the total approximate entropy of each channel.
-
-        :return: The total length for each channel.
-        """
         output = []
         for i in range(self.numElements):
-            if x == 0:
+            if len(self.data[i]) >= 3:
                 output.append(pyeeg.ap_entropy(self.data[i], self.M, self.R))
-            if x == 1:
-                output.append(pyeeg.ap_entropy(self.data1[i], self.M, self.R))
         return output

@@ -35,21 +35,25 @@ class GraphVisualizer:
         for i in range(0, self.num_rows):
             self.plotAreas.append(self.win.addPlot())
             self.win.nextRow()
-            self.plotAreas[i].enableAutoRange('xy', True)
+            self.plotAreas[i].enableAutoRange('y', True)
             if legend_layout == "all" or (legend_layout == "first" and i == 0):
                 self.legend = pg.LegendItem(offset=(0, 1))  # Ignored unresolved reference LegendItem
-            for j in range(0, len(colors)):
+            for j in range(0, len(self.colors)):
                 self.curves.append(self.plotAreas[i].plot(pen=self.colors[j]))
                 if legend_layout == "all" or (legend_layout == "first" and i == 0):
                     self.legend.addItem(self.curves[j], self.titles[j])
             if legend_layout == "all" or (legend_layout == "first" and i == 0):
                 self.legend.setParentItem(self.plotAreas[i])
 
-    def update(self, _d):
+    def update(self, _d, xmin=100, xmax=200):
         """
         Update the graph values with a new set of data.
 
         :param _d: The data (1D array where each element is an array of data to be plotted on each graph+curve)
         """
+        if xmin < 0:
+            xmin = 0
+        for i in range(0, len(self.plotAreas)):
+            self.plotAreas[i].getAxis("bottom").setRange(xmin, xmax)
         for i in range(0, len(self.curves)):
-                self.curves[i].setData(_d[i])
+            self.curves[i].setData(_d[i])

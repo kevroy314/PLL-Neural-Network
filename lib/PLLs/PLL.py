@@ -5,20 +5,24 @@ from collections import deque
 from Filters import *
 
 
-class PllComplex:
+class Pll:
     def __init__(self, _sample_rate, _carrier_frequency, _lowpass_cutoff_frequency, _phase_shift,
-                 filter_order=3, filter_window_size=100,
+                 filter_order=2, filter_window_size=100, minimum_filter_attenuation=5,
                  phase_detector_voltage_gain=1, vco_voltage_gain=1, vco_voltage_offset=0):
         """
         The constructor for a PLL.
 
-        :param phase_detector_voltage_gain: Gain to be applied upon phase detection
-        :param vco_voltage_gain: VCO gain (applied when generating output/feedback signal)
-        :param vco_voltage_offset: VCO offset (applied when generating output/feedback signal)
-        :param _sample_rate: Sample rate in Hz
-        :param _carrier_frequency: Carrier frequency in Hz
-        :param _lowpass_cutoff_frequency: Frequency above which components are removed in Hz
-        :param _phase_shift: Phase shift in radians
+        :param filter_order: The order of the filter (default 2).
+        :param filter_window_size: The number of elements which should be included in filtering.
+        :param minimum_filter_attenuation: The positive value in dB that the attenuation (-dB) will
+        reach at the cutoff frequency (default 5dB).
+        :param phase_detector_voltage_gain: Gain to be applied upon phase detection.
+        :param vco_voltage_gain: VCO gain (applied when generating output/feedback signal).
+        :param vco_voltage_offset: VCO offset in Volts (applied when generating output/feedback signal).
+        :param _sample_rate: Sample rate in samples/second.
+        :param _carrier_frequency: Carrier frequency in Hz.
+        :param _lowpass_cutoff_frequency: The frequency cutoff for the filter (in Hz).
+        :param _phase_shift: Phase shift in radians.
         """
         self.sample_rate = _sample_rate
 
@@ -37,8 +41,9 @@ class PllComplex:
         # (low=jagged, high=smooth: little to no effect on noise level compared to window size)
         self.filter_window_size = filter_window_size  # Tighter Cruve
         # (low=tight, high=loose) with order 2, 3 window size is enough to smooth noise)
-
+        self.minimum_filter_attenuation = minimum_filter_attenuation
         self.previous_voltage = 1
+        self.filtered_phase = 0
 
         self.disable_lowpass = False
 
@@ -86,10 +91,10 @@ class PllComplex:
 
         if not self.disable_lowpass:
             # Lowpass Filter
-            filtered_phase = lowpass(self.detected_phase_log, self.lowpass_cutoff_frequency,
-                                     self.carrier_frequency, self.filter_order)
+            self.filtered_phase = lowpass(self.detected_phase_log, self.sample_rate, self.lowpass_cutoff_frequency,
+                                          self.filter_order, self.minimum_filter_attenuation)
         else:
-            filtered_phase = detected_phase
+            self.filtered_phase = detected_phase
 
         # Determine Weighted Phase Adjustment
 
@@ -101,16 +106,18 @@ class PllComplex:
                                  self.v(_plls[_j].current_phase_shift))
 
         if len(_plls) == 1:
-            self.next_phase_shift = filtered_phase
+            self.next_phase_shift = self.filtered_phase
         else:
-            self.next_phase_shift = (self.v(filtered_phase) * phase_aggregator)
+            self.next_phase_shift = (self.v(self.filtered_phase) * phase_aggregator)
         if not self.disable_logging:
             self.applied_phase_shift_log.append(self.next_phase_shift)
 
         # Voltage Controlled Oscillator
-        output_voltage = self.vco_voltage_gain * sin(
-            _t * self.two_pi_carrier_frequency + abs(self.next_phase_shift)) + \
-            self.vco_voltage_offset  # TODO - Needs decision about complex value abs problem/solution
+        output_voltage = self.vco_voltage_gain * self.v(
+            _t * self.two_pi_carrier_frequency + self.next_phase_shift) + \
+            self.vco_voltage_offset
+            # WARNING: Absolute value of phase should be taken
+            # if there is an asymmetric complex-valued connectivity matrix.
 
         if not self.disable_logging:
             self.output_voltage_log.append(output_voltage)
