@@ -55,6 +55,9 @@ class Pll:
         self.applied_phase_shift_log = []
         self.output_voltage_log = []
 
+        self.filter_settings = get_lowpass_filter_settings(_sample_rate, _lowpass_cutoff_frequency, filter_order,
+                                                           minimum_filter_attenuation, filter_type="cheby2")
+
     @staticmethod
     def v(theta):
         """
@@ -91,8 +94,7 @@ class Pll:
 
         if not self.disable_lowpass:
             # Lowpass Filter
-            self.filtered_phase = lowpass(self.detected_phase_log, self.sample_rate, self.lowpass_cutoff_frequency,
-                                          self.filter_order, self.minimum_filter_attenuation)
+            self.filtered_phase = filter_data(self.filter_settings, self.detected_phase_log, latest_point_only=True)
         else:
             self.filtered_phase = detected_phase
 

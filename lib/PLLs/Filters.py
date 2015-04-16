@@ -3,7 +3,7 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 from scipy import signal
 
 
-def cheby1_lowpass_filter(_data, _sample_rate, _frequency_cutoff, order=2, minimum_attenuation=5):
+def cheby1_lowpass_filter(_sample_rate, _frequency_cutoff, order=2, minimum_attenuation=5):
     """
     Simple Chebyshev Type I filter. See the following for more details:
     http://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cheby1.html#scipy.signal.cheby1
@@ -12,36 +12,34 @@ def cheby1_lowpass_filter(_data, _sample_rate, _frequency_cutoff, order=2, minim
     :param _sample_rate: The sample rate (in Samples/Second) of the data stream (used to calculate Nyquist).
     :param minimum_attenuation: The positive value in dB that the attenuation (-dB) will reach at the cutoff frequency.
           (default 5dB)
-    :param _data: The data to be included in the lowpass filter operation.
     :param _frequency_cutoff: The frequency cutoff for the filter (in Hz).
     :param order: The order of the filter (default 2).
-    :return: The output of the lowpass filter (entire window).
+    :return: The filter settings to be used with lfilter ([b, a]).
     """
     nyq = _sample_rate * 0.5
     low = _frequency_cutoff / nyq
     b, a = signal.cheby1(order, minimum_attenuation, low, 'low', analog=False, output='ba')
-    return signal.lfilter(b, a, _data)
+    return [b, a]
 
 
-def butter_lowpass_filter(_data, _sample_rate, _frequency_cutoff, order=2):
+def butter_lowpass_filter(_sample_rate, _frequency_cutoff, order=2):
     """
     Simple butterworth lowpass filter. See the following for more details:
     docs.scipy.org/doc/scipy/reference/generated/scipy.signal.butter.html#scipy.signal.butter
     http://en.wikipedia.org/wiki/Butterworth_filter
 
     :param _sample_rate: The sample rate (in Samples/Second) of the data stream (used to calculate Nyquist).
-    :param _data: The data to be included in the lowpass filter operation.
     :param _frequency_cutoff: The frequency cutoff for the filter (in Hz).
     :param order: The order of the filter (default 2).
-    :return: The output of the lowpass filter (entire window).
+    :return: The filter settings to be used with lfilter ([b, a]).
     """
     nyq = _sample_rate * 0.5
     low = _frequency_cutoff / nyq
     b, a = signal.butter(order, low, btype='low')
-    return signal.lfilter(b, a, _data)
+    return [b, a]
 
 
-def cheby2_lowpass_filter(_data, _sample_rate, _frequency_cutoff, order=2, minimum_attenuation=5):
+def cheby2_lowpass_filter(_sample_rate, _frequency_cutoff, order=2, minimum_attenuation=5):
     """
     Simple Chebyshev Type II filter. See the following for more details:
     http://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cheby2.html#scipy.signal.cheby2
@@ -50,42 +48,56 @@ def cheby2_lowpass_filter(_data, _sample_rate, _frequency_cutoff, order=2, minim
     :param _sample_rate: The sample rate (in Samples/Second) of the data stream (used to calculate Nyquist).
     :param minimum_attenuation: The positive value in dB that the attenuation (-dB) will reach at the cutoff frequency.
           (default 5dB)
-    :param _data: The data to be included in the lowpass filter operation.
     :param _frequency_cutoff: The frequency cutoff for the filter (in Hz).
     :param order: The order of the filter (default 2).
-    :return: The output of the lowpass filter (entire window).
+    :return: The filter settings to be used with lfilter ([b, a]).
     """
     nyq = _sample_rate * 0.5
     low = _frequency_cutoff / nyq
     b, a = signal.cheby2(order, minimum_attenuation, low, 'low', analog=False, output='ba')
-    return signal.lfilter(b, a, _data)
+    return [b, a]
 
 
-def lowpass(_data, _sample_rate, _frequency_cutoff, order=2, minimum_attenuation=5, filter_type="cheby2"):
+def get_lowpass_filter_settings( _sample_rate, _frequency_cutoff, order=2, minimum_attenuation=5, filter_type="cheby2"):
     """
-    Lowpass filter wrapper function. This provides ability to call a variety of lowpass filters with various
-    options.
+    Lowpass filter settings generation wrapper function. This provides ability to configure a variety of lowpass
+    filters with various options. Filter using these settings and filter_data.
 
     :param _sample_rate: The sample rate (in Samples/Second) of the data stream (used to calculate Nyquist).
     :param minimum_attenuation: The positive value in dB that the attenuation (-dB) will reach at the cutoff frequency.
           (default 5dB)
-    :param _data: The data to be included in the lowpass filter operation.
     :param _frequency_cutoff: The frequency cutoff for the filter (in Hz).
     :param order: The order of the filter (default 2).
     :param filter_type: The type of filter ("cheby1", "butter", "cheby2" (default)).
-    :return: The output of the lowpass filter (latest point only).
+    :return: The filter settings to be used with lfilter ([b, a]).
+    """
+
+    if filter_type == "cheby1":
+        return cheby1_lowpass_filter(_sample_rate, _frequency_cutoff, order, minimum_attenuation)
+    elif filter_type == "butter":
+        return butter_lowpass_filter(_sample_rate, _frequency_cutoff, order)
+    elif filter_type == "cheby2":
+        return cheby2_lowpass_filter(_sample_rate, _frequency_cutoff, order, minimum_attenuation)
+
+    return 0
+
+
+def filter_data(_settings, _data, latest_point_only=True):
+    """
+    Lowpass filter wrapper function. This provides the ability to lowpass filter data given a set of settings
+    generated by get_lowpass_filter_settings.
+
+    :param _settings: The settings returned by the get_lowpass_filter_settings function ([b, a])
+    :param _data: The data to be included in the lowpass filter operation.
+    :param latest_point_only: Optional parameter for returning entire filter window or just latest point.
+    :return: A data point or window of data points (depending on optional parameter) of filtered data.
     """
     if len(_data) == 0:
         return 0
     elif len(_data) == 1:
         return _data[0]
-
-    filter_window = _data
-    if filter_type == "cheby1":
-        return cheby1_lowpass_filter(filter_window, _sample_rate, _frequency_cutoff, order, minimum_attenuation)[-1]
-    elif filter_type == "butter":
-        return butter_lowpass_filter(filter_window, _sample_rate, _frequency_cutoff, order)[-1]
-    elif filter_type == "cheby2":
-        return cheby2_lowpass_filter(filter_window, _sample_rate, _frequency_cutoff, order, minimum_attenuation)[-1]
-
-    return 0
+    return_val = signal.lfilter(_settings[0], _settings[1], _data)
+    if latest_point_only:
+        return return_val[-1]
+    else:
+        return return_val
