@@ -16,11 +16,11 @@ from lib.PLLs.PLL_Network import PllNetwork
 Initialize the Simulation
 """
 run_name = "0_5_Connectivity"
-input_dir = r"C:\Users\Kevin\Desktop\School" + '\\'
-input_file = "data.npy"
+input_dir = r"C:\Users\Kevin\Desktop" + '\\'
+input_file = "dog1_ictal.npy"
 
 paused = True
-duration = 9890
+duration = 100
 begin_integration_time = 0
 connectivity_matrix = [[0.5] * 16] * 16
 
@@ -44,7 +44,7 @@ connectivity_matrix = [[0.5] * 16] * 16
 '''
 
 sim = PllNetwork(number_of_plls=16, sample_rate=400.0,
-                 carrier_frequency=1, lowpass_cutoff_frequency=0.4,
+                 carrier_frequency=1, lowpass_cutoff_frequency=0.3,
                  connectivity_matrix=connectivity_matrix,
                  filter_order=3, filter_window_size=100,
                  in_signals_filename=input_dir + input_file)
@@ -75,9 +75,10 @@ Initialize the GUI
 """
 
 # UI Element Properties
-show_graphs = True
+show_graphs = False
 show_phase_plot = True
-max_display_points_window = 250
+max_display_points_window = 800
+enable_3d = False
 
 # Set up application window
 app = QtGui.QApplication([])
@@ -94,7 +95,7 @@ if show_graphs:
         data.append(deque([], max_display_points_window))
 
 if show_phase_plot:
-    phaseplot = LinePlotVisualizer(1, window_title="Phase Plot", distance=4.7625370521)
+    phaseplot = LinePlotVisualizer(16, window_title="Phase Plot", distance=4.7625370521)
     phasexa = []
     phaseya = []
     phaseza = []
@@ -176,7 +177,10 @@ def update():
                         phaseza[_i].popleft()
                     phasexa[_i].append(sim.PLLs[_i].v(sim.PLLs[_i].next_phase_shift).real)
                     phaseya[_i].append(sim.PLLs[_i].previous_voltage.real)
-                    phaseza[_i].append(0)
+                    if enable_3d:
+                        phaseza[_i].append(sim.t % (max_display_points_window / sim.sample_rate))
+                    else:
+                        phaseza[_i].append(0)
                 phaseplot.update(phasexa, phaseya, phaseza)
             if show_graphs:
                 for _i in range(0, len(data)):

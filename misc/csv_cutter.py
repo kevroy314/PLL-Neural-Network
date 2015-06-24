@@ -3,9 +3,10 @@ __author__ = 'Kevin Horecka, kevin.horecka@gmail.com'
 import os
 
 directory = r"C:\Users\Kevin\Desktop\School"
-filename = r"data_transpose.csv"
+filename = r"voltage_file_out_20150319125053369000_0_5_Connectivity.csv"
 
-event_times = [1471.65, 3463.04, 4372.31, 5985.45, 7593.59, 8886.11, 9858.01, 11922.03, 13622.85, 15178.38, 16498.46, 17272.47, 19273.87, 20791.83, 21593.39, 23339.30, 24160.90]
+#event_times = [1471.65, 3463.04, 4372.31, 5985.45, 7593.59, 8886.11, 9858.01, 11922.03, 13622.85, 15178.38, 16498.46, 17272.47, 19273.87, 20791.83, 21593.39, 23339.30, 24160.90]
+event_times = [235005, 553005, 698205, 955805, 1212605, 1419005, 1574205, 1903805, 2175405, 2423805, 2634605, 2758205, 3077805, 3320205, 3448205, 3727005, 3858205]
 pre_samples = 800
 pos_samples = 800
 
@@ -43,5 +44,5 @@ def extract_csv(_directory, _filename, _row_start, _row_count, has_header_row=Fa
                     break
                 i += 1
 
-for i in range(0,len(row_starts)):
+for i in range(0, len(row_starts)):
     extract_csv(directory, filename, row_starts[i], row_count)

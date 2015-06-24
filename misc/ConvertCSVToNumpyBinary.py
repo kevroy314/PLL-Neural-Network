@@ -19,8 +19,8 @@ import csv
 import numpy as np
 
 
-input_dir = r"C:\Users\Kevin\Desktop\School" + '\\'
-input_file = "data.csv"
+input_dir = r"C:\Users\Kevin\Desktop" + '\\'
+input_file = "dog1_ictal.csv"
 
 input_filename = input_dir + input_file
 

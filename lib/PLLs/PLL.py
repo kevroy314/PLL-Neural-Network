@@ -56,7 +56,7 @@ class Pll:
         self.output_voltage_log = []
 
         self.filter_settings = get_lowpass_filter_settings(_sample_rate, _lowpass_cutoff_frequency, filter_order,
-                                                           minimum_filter_attenuation, filter_type="cheby2")
+                                                           minimum_filter_attenuation, filter_type="cheby1")
 
     @staticmethod
     def v(theta):
