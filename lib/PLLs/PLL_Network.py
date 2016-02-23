@@ -61,7 +61,10 @@ class PllNetwork:
 
         # Create Input Signals
         start_time = datetime.datetime.now()
-        self.input_signals = FileSignal.construct_signals_from_numpy_binary(self.in_signals_filename, self.sample_rate)
+        if self.in_signals_filename[-4:] == '.npy':
+            self.input_signals = FileSignal.construct_signals_from_numpy_binary(self.in_signals_filename, self.sample_rate)
+        elif self.in_signals_filename[-4:] == '.csv':
+            self.input_signals = FileSignal.construct_signals_from_csv(self.in_signals_filename, self.sample_rate)
         execution_time = datetime.datetime.now() - start_time
         print "Input file loaded in " + str(execution_time) + "ms"
 

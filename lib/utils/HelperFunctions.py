@@ -63,6 +63,7 @@ class WindowedPathLengthMeasure:
         self.rollingSums = np.zeros(num_elements)
         self.lengths = []
         self.data = []
+        self.totalSums = np.zeros(num_elements)
         for i in range(0, num_elements):
             self.data.append(deque([], buffer_length))
             self.lengths.append(deque([], buffer_length))
@@ -87,6 +88,7 @@ class WindowedPathLengthMeasure:
                 s = np.subtract(a, b)  # Ignored missing np.subtract reference
                 r = np.linalg.norm(s)
                 self.rollingSums[i] += r
+                self.totalSums[i] += r
                 if len(self.lengths[i]) == self.bufferLength:
                     self.rollingSums[i] -= self.lengths[i].popleft()
                 self.lengths[i].append(r)

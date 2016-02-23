@@ -11,23 +11,10 @@
     </inspection_tool>
     <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="ignoredIdentifiers">
-        <value>
-          <list size="13">
-            <item index="0" class="java.lang.String" itemvalue="bool.all" />
-            <item index="1" class="java.lang.String" itemvalue="bool.any" />
-            <item index="2" class="java.lang.String" itemvalue="PIL.Image" />
-            <item index="3" class="java.lang.String" itemvalue="numpy.subtract" />
-            <item index="4" class="java.lang.String" itemvalue="numpy.*" />
-            <item index="5" class="java.lang.String" itemvalue="pyqtgraph.SpinBox" />
-            <item index="6" class="java.lang.String" itemvalue="pyqtgraph.LegendItem" />
-            <item index="7" class="java.lang.String" itemvalue="pyqtgraph.opengl.GLGridItem" />
-            <item index="8" class="java.lang.String" itemvalue="pyqtgraph.opengl.GLLinePlotItem" />
-            <item index="9" class="java.lang.String" itemvalue="pyqtgraph.GradientWidget" />
-            <item index="10" class="java.lang.String" itemvalue="pyqtgraph.ImageItem" />
-            <item index="11" class="java.lang.String" itemvalue="pyqtgraph.exporters" />
-            <item index="12" class="java.lang.String" itemvalue="list.popleft" />
-          </list>
-        </value>
+        <list>
+          <option value="bool.*" />
+          <option value="matplotlib.cm.gray_r" />
+        </list>
       </option>
     </inspection_tool>
     <inspection_tool class="SpellCheckingInspection" enabled="false" level="TYPO" enabled_by_default="false">
