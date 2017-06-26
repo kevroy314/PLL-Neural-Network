@@ -85,25 +85,25 @@ def get_parameters(input_filename, modulus, mod_index):
         index += 1
     return rows
 
-config_core = 0
-config_num_cores_to_use = 8
+config_core = 5
+config_num_cores_to_use = 6
 
 config_input_dirs_ictal = [
-    r"C:\Users\Kevin\Desktop\Work\PLL Data\random_per_dog\dog1_ictal" + '\\',
-    r"C:\Users\Kevin\Desktop\Work\PLL Data\random_per_dog\dog2_ictal" + '\\',
-    r"C:\Users\Kevin\Desktop\Work\PLL Data\random_per_dog\dog3_ictal" + '\\',
-    r"C:\Users\Kevin\Desktop\Work\PLL Data\random_per_dog\dog4_ictal" + '\\'
+    r"C:\Users\Kevin\Desktop\Work\PLL Data\validation_data\dog1_ictal" + '\\',
+    r"C:\Users\Kevin\Desktop\Work\PLL Data\validation_data\dog2_ictal" + '\\',
+    r"C:\Users\Kevin\Desktop\Work\PLL Data\validation_data\dog3_ictal" + '\\',
+    r"C:\Users\Kevin\Desktop\Work\PLL Data\validation_data\dog4_ictal" + '\\'
 ]
 config_input_dirs_interictal = [
-    r"C:\Users\Kevin\Desktop\Work\PLL Data\random_per_dog\dog1_interictal" + '\\',
-    r"C:\Users\Kevin\Desktop\Work\PLL Data\random_per_dog\dog2_interictal" + '\\',
-    r"C:\Users\Kevin\Desktop\Work\PLL Data\random_per_dog\dog3_interictal" + '\\',
-    r"C:\Users\Kevin\Desktop\Work\PLL Data\random_per_dog\dog4_interictal" + '\\'
+    r"C:\Users\Kevin\Desktop\Work\PLL Data\validation_data\dog1_interictal" + '\\',
+    r"C:\Users\Kevin\Desktop\Work\PLL Data\validation_data\dog2_interictal" + '\\',
+    r"C:\Users\Kevin\Desktop\Work\PLL Data\validation_data\dog3_interictal" + '\\',
+    r"C:\Users\Kevin\Desktop\Work\PLL Data\validation_data\dog4_interictal" + '\\'
 ]
 
-config_output_dir = r'C:\Users\Kevin\Desktop\Work\Worst Param Check Output' + '\\'
+config_output_dir = r'C:\Users\Kevin\Desktop\Work\Validation Output' + '\\'
 
-config_parameter_list_file = r'C:\Users\Kevin\Google Drive\School\Projects\PLL\parameters_to_test_worst.csv'
+config_parameter_list_file = r'C:\Users\Kevin\Google Drive\School\Projects\PLL\parameters_to_test.csv'
 
 
 params_under_test = get_parameters(config_parameter_list_file, config_num_cores_to_use, config_core)

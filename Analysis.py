@@ -153,6 +153,109 @@ def optimize(output_filename, ictal_files, interictal_files, enable_binning=Fals
         print report
 
 
+def test(threshold, output_filename, ictal_files, interictal_files, enable_binning=False, bin_num=0, bin_size=100):
+    # Create arrays for storing the optimiziation data
+    ictal = []
+    ictal_params = []
+    interictal = []
+    interictal_params = []
+
+    # Load the data from both sets of files
+    for fname in ictal_files:
+        result = csv.reader(open(fname, 'rb'), delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
+        ictal_params.append(get_params_from_filename_string(fname, 'ictal_results'))
+        ictal.append([])
+        for row in result:
+            ictal[-1].append(row)
+    for fname in interictal_files:
+        result = csv.reader(open(fname, 'rb'), delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
+        interictal_params.append(get_params_from_filename_string(fname, 'interictal_results'))
+        interictal.append([])
+        for row in result:
+            interictal[-1].append(row)
+
+    # Sanity check to confirm that the number of analysis parameters are the same (big problem if not)
+    if len(ictal_params) != len(interictal_params):
+        logging.error("Error: There are not an equal number of ictal and interictal analysis files.")
+
+    # Check to make sure that, in our list of ictal vs interictal, the parameters for one match the parameters
+    # for the other (they are one-to-one).
+    mismatch_count = 0
+    for i in range(len(ictal_params)):
+        if len(ictal_params[i]) != len(interictal_params[i]):
+            logging.error("Error: Parameter lists are not equal in size.")
+        mismatch = False
+        for j in range(0, len(ictal_params[i])):
+            val0 = ictal_params[i][j]
+            val1 = interictal_params[i][j]
+            if val0 != val1:
+                mismatch = True
+        if mismatch:
+            mismatch_count += 1
+    if mismatch_count != 0:
+        logging.error("Error: %d filename parameter sets do not match." % mismatch_count)
+
+    # Set the calibration parameters to be the ictal parameters (arbitrary)
+    params = ictal_params
+
+    # If we're doing binning (file-by-file subsetting of the data - so you can analyze a specific dog), extract the
+    # requested bin.
+    if enable_binning:
+        for i in range(0, len(ictal)):
+            ictal[i] = ictal[i][bin_size * bin_num:(bin_size * bin_num) + bin_size]
+        for i in range(0, len(interictal)):
+            interictal[i] = interictal[i][bin_size * bin_num:(bin_size * bin_num) + bin_size]
+
+    # Take the mean path length across electrodes
+    ictal_means = numpy.mean(ictal, axis=2)
+    interictal_means = numpy.mean(interictal, axis=2)
+
+    # Define our internal charactarization function
+    def characterize(positive_list, negative_list, t):
+        true_pos = (positive_list >= t).sum()
+        false_neg = (positive_list < t).sum()
+        true_neg = (negative_list < t).sum()
+        false_pos = (negative_list >= t).sum()
+        return true_pos, true_neg, false_pos, false_neg
+
+    # Create arrays for storing TP, TN ,FP, FN
+    true_positives = []
+    true_negatives = []
+    false_positives = []
+    false_negatives = []
+    for i in range(0, len(interictal_means)):
+        true_positive, true_negative, false_positive, false_negative = characterize(ictal_means[i],
+                                                                                    interictal_means[i], threshold)
+        true_positives.append(true_positive)
+        true_negatives.append(true_negative)
+        false_positives.append(false_positive)
+        false_negatives.append(false_negative)
+
+    # Define results arrays for each file
+    accuracy = []  # The TP+TN/(len(TP) + len(TN)) for a given file - aka percent accuracy or "correctness" measure
+    ftpn = []
+
+    # Create the output file w/ parameters (in file order), best accuracy, best threshold, and all accuracies
+    output_fp = open(output_filename, 'wb')
+    output_file = csv.writer(output_fp)
+    output_fp.write(
+        'number_of_input_channels,sample_rate,duration,carrier_frequency,lowpass_cuttoff_frequency,filter_order,filter_window_size,path_length_window_size,accuracy,threshold,tp,tn,fp,tn\r\n')
+    for i in range(0, len(true_positives)):
+        # sums.append(numpy.add(numpy.array(true_positives[i]), numpy.array(true_negatives[i])))
+        # correctness.append(sums[i] / float(len(true_positives[i]) + len(true_negatives[i])))
+        acc = float(true_positives[i] + true_negatives[i]) / float(
+            true_positives[i] + false_positives[i] + false_negatives[i] + true_negatives[i])
+        print acc
+        accuracy.append(acc)
+        ftpn.append([true_positives[i], true_negatives[i], false_positives[i], false_negatives[i]])
+        output_row = params[i] + [acc] + [true_positives[i]] + [true_negatives[i]] + [false_positives[i]] + [false_negatives[i]]
+        output_file.writerow(output_row)
+
+        # Output a report of the file success
+        report = "Params: " + str(params[i]) + ", Accuracy: " + str(acc) + ", Threshold: " + str(threshold)
+        print report
+
+
 def load_roc_arrays(filename):
     file_reader = csv.reader(open(filename, 'rb'), delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
     i = 0
@@ -186,7 +289,7 @@ def visualize_single_roc(tp, tn, fp, fn):
     plt.show()
 
 
-def visualize_multiple_roc(tps, tns, fps, fns, labels=None, title=''):
+def visualize_multiple_roc(tps, tns, fps, fns, labels=None, title='', subplot=None):
     if not labels:
         labels = []
     if not (len(tps) == len(tns) and len(tps) == len(fps) and len(tps) == len(fns)):
@@ -219,15 +322,22 @@ def visualize_multiple_roc(tps, tns, fps, fns, labels=None, title=''):
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
         plt.title(title)
-        if labels:
-            plt.plot(roc_x, roc_y, label=labels[k % len(labels)])
+        if not subplot:
+                f = plt.figure()
+                ax = f.add_subplot(1, 1, 1, title=title)
         else:
-            plt.plot(roc_x, roc_y, color='g')
+            ax = subplot[0].add_subplot(subplot[1], subplot[2], subplot[3], title=title)
+        if labels:
+            ax.plot(roc_x, roc_y, label=labels[k % len(labels)])
+        else:
+            ax.plot(roc_x, roc_y, color='g')
     lin = numpy.linspace(0, 1, len(roc_x))
-    plt.plot(lin, lin, color='k')
+    ax.plot(lin, lin, color='k')
     if labels:
-        plt.legend(loc=4)
-    plt.show()
+        ax.legend(loc=4)
+    if not subplot:
+        plt.title(title)
+        plt.show()
 
 
 def merge_function_pairs(x1, y1, x2, y2):
@@ -252,7 +362,7 @@ def merge_function_pairs(x1, y1, x2, y2):
     return x_new, y1_new, y2_new
 
 
-def visualize_min_max_middle_roc(tps, tns, fps, fns, labels=None, title=''):
+def visualize_min_max_middle_roc(tps, tns, fps, fns, labels=None, axis_labels=None, title='', subplot=None):
     if not labels:
         labels = []
     if len(tps) != 3 or len(tns) != 3 or len(fps) != 3 or len(fns) != 3 or len(labels) != 3:
@@ -287,9 +397,17 @@ def visualize_min_max_middle_roc(tps, tns, fps, fns, labels=None, title=''):
         sorter = zip(roc_x, roc_y)
         sorter.sort()
         roc_x, roc_y = zip(*sorter)
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title(title)
+        if not subplot:
+            f = plt.figure()
+            ax = f.add_subplot(1, 1, 1, title=title)
+        else:
+            ax = subplot[0].add_subplot(subplot[1], subplot[2], subplot[3], title=title)
+        if not axis_labels:
+            ax.set_xlabel('False Positive Rate')
+            ax.set_ylabel('True Positive Rate')
+        else:
+            ax.set_xlabel(axis_labels[0])
+            ax.set_ylabel(axis_labels[1])
         if k == 0:
             min_x = roc_x
             min_y = roc_y
@@ -297,19 +415,22 @@ def visualize_min_max_middle_roc(tps, tns, fps, fns, labels=None, title=''):
             max_x = roc_x
             max_y = roc_y
         if labels:
-            plt.plot(roc_x, roc_y, label=labels[k % len(labels)], color=manual_colors[k])
+            ax.plot(roc_x, roc_y, label=labels[k % len(labels)], color=manual_colors[k])
         else:
-            plt.plot(roc_x, roc_y, color='g')
+            ax.plot(roc_x, roc_y, color='g')
     x, y1, y2 = merge_function_pairs(min_x, min_y, max_x, max_y)
-    plt.fill_between(x, y1, y2, color='gray', alpha=0.5)
+    ax.fill_between(x, y1, y2, color='gray', alpha=0.5)
     lin = numpy.linspace(0, 1, len(roc_x))
-    plt.plot(lin, lin, color='#000000', linestyle='--')
+    ax.plot(lin, lin, color='#000000', linestyle='--')
     if labels:
-        plt.legend(loc=4)
-    plt.show()
+        ax.legend(loc=4)
+    if not subplot:
+        ax.title(title)
+        ax.show()
 
 
-def visualize_lines(meta_filename, x_var_col_index=4, y_var_col_index=8, line_var_col_index=5, show_score=True, title=''):
+def visualize_lines(meta_filename, x_var_col_index=4, y_var_col_index=8, line_var_col_index=5, show_score=True,
+                    title=''):
     file_p = open(meta_filename, 'rb')
     header = file_p.readline()
     col_names = header.split(',')
@@ -365,7 +486,8 @@ def visualize_lines(meta_filename, x_var_col_index=4, y_var_col_index=8, line_va
     plt.show()
 
 
-def visualize_heatmap(meta_filename, x_var_col_index=4, y_var_col_index=3, z_var_col_index=8, constraints=None, subplot=None,
+def visualize_heatmap(meta_filename, x_var_col_index=4, y_var_col_index=3, z_var_col_index=8, constraints=None,
+                      subplot=None, show_points=False,
                       title='', fixed_z_scale=None, labels=None, cmap=plt.cm.gray_r):
     file_p = open(meta_filename, 'rb')
     file_p.readline()
@@ -396,7 +518,7 @@ def visualize_heatmap(meta_filename, x_var_col_index=4, y_var_col_index=3, z_var
 
     if not subplot:
         f = plt.figure()
-        ax = f.add_subplot(1, 1, 1)
+        ax = f.add_subplot(1, 1, 1, title=title)
     else:
         ax = subplot[0].add_subplot(subplot[1], subplot[2], subplot[3], title=title)
     ax.set_yscale('log')
@@ -416,21 +538,21 @@ def visualize_heatmap(meta_filename, x_var_col_index=4, y_var_col_index=3, z_var
         ax.set_xlabel(labels[0])
         ax.set_ylabel(labels[1])
         cbar.set_label(labels[2], rotation=270, labelpad=20)
-    ax.plot(x, y, 'kx ')
+    if show_points:
+        ax.plot(x, y, 'kx ')
     if not subplot:
         plt.savefig(meta_filename + ".png")
         plt.title(title)
         plt.show()
 
 
-data_dir = clean_dir_ending(r'C:\Users\Kevin\Desktop\Work\Worst Param Check Output')
+data_dir = clean_dir_ending(r'C:\Users\Kevin\Desktop\Work\Validation Output')
 output_dir = clean_dir_ending(r'C:\Users\Kevin\Desktop\Work\Optimization Results')
 
 files = get_files_in_dir([data_dir])
 
 ictal_filenames = [s for s in files if 'inter' not in s]
 interictal_filenames = [s for s in files if 'inter' in s]
-
 
 '''This section has a variety of commands which can be run using the above analysis tools'''
 
@@ -445,8 +567,7 @@ interictal_filenames = [s for s in files if 'inter' in s]
 
 # Commands for outputting multiple heatmaps on same plot (uncomment sections 1 and 3 plus desired section 2 elements)
 # Section 1, create a figure
-# f = plt.figure()
-# f.suptitle("Parameter Exploration")
+# f = plt.figure(figsize=(25, 10))
 
 # Section 2, specify heatmaps
 # visualize_heatmap(output_dir + r'carrier_frequency_order_2_3.csv', constraints=[[5, 2]], subplot=[f, 1, 2, 1], title='All Dogs Order 2', labels=['Lowpass Filter Cutoff Frequency (Hz)', 'VCO Carrier Frequency (Hz)', 'Accuracy'], fixed_z_scale=[0.655, 0.745])
@@ -461,6 +582,16 @@ interictal_filenames = [s for s in files if 'inter' in s]
 # visualize_heatmap(output_dir + r'carrier_frequency_order_3_dog3.csv', constraints=[[5, 3]], subplot=[f, 1, 2, 2], title='Dog 3 Order 3', labels=['Lowpass Filter Cutoff Frequency (Hz)', 'VCO Carrier Frequency (Hz)', 'Accuracy'], fixed_z_scale=[0.948, 0.986])
 # visualize_heatmap(output_dir + r'carrier_frequency_order_3_dog4.csv', constraints=[[5, 3]], subplot=[f, 1, 2, 2], title='Dog 4 Order 3', labels=['Lowpass Filter Cutoff Frequency (Hz)', 'VCO Carrier Frequency (Hz)', 'Accuracy'], fixed_z_scale=[0.576, 0.76])
 
+# Figure try
+# visualize_heatmap(output_dir + r'carrier_frequency_order_2_3_dog1.csv', constraints=[[5, 2]], subplot=[f, 2, 4, 1], title='Dog 1 Order 2', labels=['', 'VCO Carrier Frequency (Hz)', ''], fixed_z_scale=[0.824, 0.912])
+# visualize_heatmap(output_dir + r'carrier_frequency_order_2_3_dog2.csv', constraints=[[5, 2]], subplot=[f, 2, 4, 2], title='Dog 2 Order 2', labels=['', '', ''], fixed_z_scale=[0.51, 0.825])
+# visualize_heatmap(output_dir + r'carrier_frequency_order_2_3_dog3.csv', constraints=[[5, 2]], subplot=[f, 2, 4, 3], title='Dog 3 Order 2', labels=['', '', ''], fixed_z_scale=[0.948, 0.986])
+# visualize_heatmap(output_dir + r'carrier_frequency_order_2_3_dog4.csv', constraints=[[5, 2]], subplot=[f, 2, 4, 4], title='Dog 4 Order 2', labels=['', '', 'Accuracy'], fixed_z_scale=[0.576, 0.76])
+# visualize_heatmap(output_dir + r'carrier_frequency_order_3_dog1.csv', constraints=[[5, 3]], subplot=[f, 2, 4, 5], title='Dog 1 Order 3', labels=['Lowpass Filter Cutoff Frequency (Hz)', 'VCO Carrier Frequency (Hz)', ''], fixed_z_scale=[0.824, 0.912])
+# visualize_heatmap(output_dir + r'carrier_frequency_order_3_dog2.csv', constraints=[[5, 3]], subplot=[f, 2, 4, 6], title='Dog 2 Order 3', labels=['Lowpass Filter Cutoff Frequency (Hz)', '', ''], fixed_z_scale=[0.51, 0.825])
+# visualize_heatmap(output_dir + r'carrier_frequency_order_3_dog3.csv', constraints=[[5, 3]], subplot=[f, 2, 4, 7], title='Dog 3 Order 3', labels=['Lowpass Filter Cutoff Frequency (Hz)', '', ''], fixed_z_scale=[0.948, 0.986])
+# visualize_heatmap(output_dir + r'carrier_frequency_order_3_dog4.csv', constraints=[[5, 3]], subplot=[f, 2, 4, 8], title='Dog 4 Order 3', labels=['Lowpass Filter Cutoff Frequency (Hz)', '', 'Accuracy'], fixed_z_scale=[0.576, 0.76])
+
 # Section 3, layout figure and show
 # plt.tight_layout()
 # plt.show()
@@ -473,7 +604,6 @@ interictal_filenames = [s for s in files if 'inter' in s]
 # optimize(output_dir + r'final_param_check_dog3.csv', ictal_filenames, interictal_filenames, bin=True, bin_num=2, bin_size=100)
 # optimize(output_dir + r'final_param_check_dog4.csv', ictal_filenames, interictal_filenames, bin=True, bin_num=3, bin_size=100)
 
-
 # Commands for original ROC visualization with all 5 bests for each order displayed together
 # tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Desktop\roc_order_2_best.csv')
 # visualize_multiple_roc(tp, tn, fp, fn, labels=['All Dogs', 'Dog 1', 'Dog 2', 'Dog 3', 'Dog 4'], title="Filter Order 2")
@@ -481,29 +611,59 @@ interictal_filenames = [s for s in files if 'inter' in s]
 # tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Desktop\roc_order_3_best.csv')
 # visualize_multiple_roc(tp, tn, fp, fn, labels=['All Dogs', 'Dog 1', 'Dog 2', 'Dog 3', 'Dog 4'], title="Filter Order 3")
 
+# Commands for outputting multiple ROCs on same plot (uncomment sections 1 and 3 plus desired section 2 elements)
+# Section 1, create a figure
+f = plt.figure(figsize=(25, 10))
 
+# Section 2, specify ROCs
 # Commands for new ROC visualization with each individual order/dog best/worst/group optimized together
-# tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc_order_2_dog_1.csv')
-# visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], title="Filter Order 2, Dog 1 - Best, Worst, and Group Optimized")
+tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc\roc_order_2_dog_1.csv')
+visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], axis_labels=['', 'True Positive Rate'], title="Dog 1 Order 2", subplot=[f, 2, 4, 1])
 
-# tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc_order_2_dog_2.csv')
-# visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], title="Filter Order 2, Dog 2 - Best, Worst, and Group Optimized")
+tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc\roc_order_2_dog_2.csv')
+visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], axis_labels=['', ''], title="Dog 2 Order 2", subplot=[f, 2, 4, 2])
 
-# tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc_order_2_dog_3.csv')
-# visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], title="Filter Order 2, Dog 3 - Best, Worst, and Group Optimized")
+tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc\roc_order_2_dog_3.csv')
+visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], axis_labels=['', ''], title="Dog 3 Order 2", subplot=[f, 2, 4, 3])
 
-# tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc_order_2_dog_4.csv')
-# visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], title="Filter Order 2, Dog 4 - Best, Worst, and Group Optimized")
+tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc\roc_order_2_dog_4.csv')
+visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], axis_labels=['', ''], title="Dog 4 Order 2", subplot=[f, 2, 4, 4])
 
 
-# tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc_order_3_dog_1.csv')
-# visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], title="Filter Order 3, Dog 1 - Best, Worst, and Group Optimized")
+tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc\roc_order_3_dog_1.csv')
+visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], axis_labels=['False Positive Rate', 'True Positive Rate'], title="Dog 1 Order 3", subplot=[f, 2, 4, 5])
 
-# tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc_order_3_dog_2.csv')
-# visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], title="Filter Order 3, Dog 2 - Best, Worst, and Group Optimized")
+tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc\roc_order_3_dog_2.csv')
+visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], axis_labels=['False Positive Rate', ''], title="Dog 2 Order 3", subplot=[f, 2, 4, 6])
 
-# tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc_order_3_dog_3.csv')
-# visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], title="Filter Order 3, Dog 3 - Best, Worst, and Group Optimized")
+tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc\roc_order_3_dog_3.csv')
+visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], axis_labels=['False Positive Rate', ''], title="Dog 3 Order 3", subplot=[f, 2, 4, 7])
 
-# tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc_order_3_dog_4.csv')
-# visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], title="Filter Order 3, Dog 4 - Best, Worst, and Group Optimized")
+tp, tn, fp, fn = load_roc_arrays(r'C:\Users\Kevin\Google Drive\School\Projects\PLL\Paper Figures\roc\roc_order_3_dog_4.csv')
+visualize_min_max_middle_roc(tp, tn, fp, fn, labels=['Worst', 'Group Optimized', 'Best'], axis_labels=['False Positive Rate', ''], title="Dog 4 Order 3", subplot=[f, 2, 4, 8])
+
+# Section 3, layout figure and show
+# plt.tight_layout()
+plt.show()
+
+# Commands for optimizing final parameter checks
+# test(19.04174239, output_dir + r'validation_order3_max.csv', ictal_filenames, interictal_filenames, enable_binning=False, bin_num=0, bin_size=50)
+# test(36.50667746, output_dir + r'validation_dog1_order3_max.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=0, bin_size=50)
+# test(10.44726796, output_dir + r'validation_dog2_order3_max.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=1, bin_size=50)
+# test(5.055105062, output_dir + r'validation_dog3_order3_max.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=2, bin_size=50)
+# test(5.905523785, output_dir + r'validation_dog4_order3_max.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=3, bin_size=50)
+
+# test(18.23979995, output_dir + r'validation_order2_max.csv', ictal_filenames, interictal_filenames, enable_binning=False, bin_num=0, bin_size=50)
+# test(66.26801104, output_dir + r'validation_dog1_order2_max.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=0, bin_size=50)
+# test(12.09231881, output_dir + r'validation_dog2_order2_max.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=1, bin_size=50)
+# test(4.849560335, output_dir + r'validation_dog3_order2_max.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=2, bin_size=50)
+# test(5.923866524, output_dir + r'validation_dog4_order2_max.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=3, bin_size=50)
+
+# test(3.166956224, output_dir + r'validation_dog1_order2_min.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=0, bin_size=50)
+# test(15.90808099, output_dir + r'validation_dog2_order2_min.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=1, bin_size=50)
+# test(17.4370032, output_dir + r'validation_dog3_order2_min.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=2, bin_size=50)
+# test(229.934675, output_dir + r'validation_dog4_order2_min.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=3, bin_size=50)
+# test(4.579139712, output_dir + r'validation_dog1_order3_min.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=0, bin_size=50)
+# test(59.47652158, output_dir + r'validation_dog2_order3_min.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=1, bin_size=50)
+# test(18.38598471, output_dir + r'validation_dog3_order3_min.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=2, bin_size=50)
+# test(187.5238623, output_dir + r'validation_dog4_order3_min.csv', ictal_filenames, interictal_filenames, enable_binning=True, bin_num=3, bin_size=50)
